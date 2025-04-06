@@ -2,3 +2,4 @@
 .streamlit/secrets.toml
 growscore-wired/.streamlit/secrets.toml
 .streamlit:secrets.toml.py
+.streamlit/secrets.toml
