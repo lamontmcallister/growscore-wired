@@ -4,3 +4,4 @@ supabase
 tiktoken
 python-dotenv
 pdfplumber
+matplotlib
