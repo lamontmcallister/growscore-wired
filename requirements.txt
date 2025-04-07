@@ -1,10 +1,5 @@
-streamlit==1.24.0
+streamlit
 openai
-pandas
-numpy
-matplotlib
-pdfplumber==0.11.6
-python-dotenv
 supabase
-Pillow<10,>=9.0.0
-
+tiktoken
+python-dotenv
