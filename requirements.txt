@@ -1,2 +1,8 @@
-streamlit
-supabase-py
+streamlit==1.24.0
+openai
+pandas
+numpy
+matplotlib
+pdfplumber
+python-dotenv
+supabase
