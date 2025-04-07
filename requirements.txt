@@ -3,3 +3,4 @@ openai
 supabase
 tiktoken
 python-dotenv
+pdfplumber
