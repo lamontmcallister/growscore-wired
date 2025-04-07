@@ -3,6 +3,7 @@ openai
 pandas
 numpy
 matplotlib
-pdfplumber
+pdfplumber==0.11.6
 python-dotenv
-supabase
+supabase==2.15.0
+Pillow<10.0.0,>=9.0.0
