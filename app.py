@@ -14,6 +14,22 @@ from datetime import datetime
 
 st.set_page_config(page_title="Skippr", layout="wide")
 
+st.markdown("""
+<style>
+    [data-testid="stSidebar"] {
+        background-color: #003B73;
+    }
+    [data-testid="stSidebar"] h1 {
+        color: white;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+with st.sidebar:
+    st.image("assets/skippr-logo.png", use_column_width=True)
+""")
+
+
 # Load secrets
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -52,7 +68,7 @@ with st.sidebar:
                 st.error(f"Signup failed: {e}")
 
 if not st.session_state.supabase_session:
-    st.warning("❌ No active session. Please log in.")
+    st.warning("⚠️ Please sign in to start your journey with Skippr.")
     st.stop()
     
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
@@ -312,7 +328,7 @@ def recruiter_dashboard():
             st.write(f"{row['Candidate']}: Ready for interviews.")
 
 # ------------------- Routing -------------------
-st.title("🚀 Welcome to Skippr")
+st.title("🧭 Skippr")
 
 st.markdown("""
 # 🌟 Welcome to Skippr
@@ -331,7 +347,6 @@ Let’s skip the noise—and unlock your potential.
 """)
 
 st.markdown("""
-# 🌟 Welcome to Skippr
 **Human-first hiring. Verified skills. Smarter decisions.**
 
 At Skippr, we believe great talent shouldn't get lost in outdated filters or keyword games.  
@@ -351,4 +366,3 @@ if portal == "👤 Candidate Portal":
     candidate_journey()
 else:
     recruiter_dashboard()
-
