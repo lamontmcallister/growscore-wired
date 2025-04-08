@@ -62,7 +62,11 @@ leadership_skills = ["Ownership", "Bias for Action", "Earn Trust", "Deliver Resu
                      "Dive Deep", "Frugality", "Have Backbone"]
 
 def extract_skills_from_resume(text):
-    prompt = f"Extract 5–10 professional skills from this resume:
+    prompt = f"""Extract 5-10 professional skills from this resume:
+
+{text}
+
+Return as a Python list."""
 {text}
 Return as a Python list."
     try:
