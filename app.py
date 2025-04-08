@@ -1,9 +1,10 @@
-# Full GrowScore platform with all modules and updated login UI
+# Full Skippr platform with all modules and updated login UI
 
 
 import streamlit as st
 import os
 import openai
+import ast
 import pdfplumber
 import pandas as pd
 import numpy as np
@@ -11,7 +12,7 @@ import matplotlib.pyplot as plt
 from supabase import create_client, Client
 from datetime import datetime
 
-st.set_page_config(page_title="GrowScore", layout="wide")
+st.set_page_config(page_title="Skippr", layout="wide")
 
 # Load secrets
 SUPABASE_URL = st.secrets["supabase"]["url"]
@@ -218,7 +219,7 @@ def candidate_journey():
         st.text_input("Company", key="hr_company")
         st.text_input("Manager", key="hr_manager")
         st.text_input("HR Email (optional)", key="hr_email")
-        st.checkbox("I authorize GrowScore to verify past performance", key="hr_auth")
+        st.checkbox("I authorize Skippr to verify past performance", key="hr_auth")
         st.session_state.hr_check = "✅ HR Request Authorized (simulated)"
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
@@ -261,7 +262,7 @@ def candidate_journey():
         st.subheader("📈 Growth Roadmap")
         for rec in generate_growth_recs():
             st.markdown(rec)
-        st.success("🎉 You’ve completed your GrowScore profile!")
+        st.success("🎉 You’ve completed your Skippr profile!")
 
 # ------------------- Recruiter Dashboard -------------------
 def recruiter_dashboard():
@@ -311,7 +312,24 @@ def recruiter_dashboard():
             st.write(f"{row['Candidate']}: Ready for interviews.")
 
 # ------------------- Routing -------------------
-st.title("🚀 Welcome to GrowScore")
+st.title("🚀 Welcome to Skippr")
+
+st.markdown("""
+# 🌟 Welcome to Skippr
+**Human-first hiring. Verified skills. Smarter decisions.**
+
+At Skippr, we believe great talent shouldn't get lost in outdated filters or keyword games.  
+We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
+
+**Why Skippr?**
+- ✅ Verifies your resume data with AI
+- 🔍 Matches you to job descriptions semantically, not just by title
+- 📈 Builds a personalized growth roadmap
+- 🤝 Helps recruiters see *you*, not just your job history
+
+Let’s skip the noise—and unlock your potential.
+""")
+
 portal = st.radio("Choose your portal:", ["👤 Candidate Portal", "🧑‍💼 Recruiter Portal"])
 if portal == "👤 Candidate Portal":
     candidate_journey()
