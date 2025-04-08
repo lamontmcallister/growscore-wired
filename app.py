@@ -77,7 +77,7 @@ if not st.session_state.supabase_session:
                     st.session_state.supabase_session = result.session
                     st.session_state.supabase_user = result.user
                     st.success(f"✅ Logged in as {email}")
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Login failed: {e}")
         else:
