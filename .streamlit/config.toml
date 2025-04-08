@@ -7,8 +7,9 @@ version = "3.11"
 
 
 [theme]
-primaryColor = "#3D5AFE"
-backgroundColor = "#F5F7FA"
-secondaryBackgroundColor = "#D6D8F5"
+primaryColor = "#0047AB"
+backgroundColor = "#F9FAFB"
+secondaryBackgroundColor = "#FFFFFF"
 textColor = "#111827"
 font = "sans serif"
+
