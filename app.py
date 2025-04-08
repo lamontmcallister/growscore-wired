@@ -70,7 +70,7 @@ with st.sidebar:
 if not st.session_state.supabase_session:
     st.warning("⚠️ Please sign in to start your journey with Skippr.")
     st.stop()
-    
+
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
                "Communication", "Strategic Planning", "Excel", "Machine Learning"]
 
@@ -333,13 +333,36 @@ st.markdown("""
 # Welcome to Skippr
 **Human-first hiring. Verified skills. Smarter decisions.**
 
-At Skippr, we believe great talent shouldn\'t get lost in outdated filters or keyword games.  
+At Skippr, we believe great talent shouldn't get lost in outdated filters or keyword games.  
+We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
+
+**Why Skippr?**
+- Verifies your resume data with AI
+- Matches you to job descriptions semantically, not just by title
+- Builds a personalized growth roadmap
+- Helps recruiters see *you*, not just your job history
+
+Let’s skip the noise—and unlock your potential.
+""")
+st.markdown("""
+# Welcome to Skippr
+We use AI to surface the *real signals* behind your resume—so you can show what you\047re capable of, not just what you\047ve done.\n
+**Why Skippr?**
+- Verifies your resume data with AI
+- Matches you to job descriptions semantically, not just by title
+- Builds a personalized growth roadmap
+- Helps recruiters see *you*, not just your job history\n
+Let\047s skip the noise—and unlock your potential.
+""")
+st.markdown("""
+# Welcome to Skippr
+
 We use AI to surface the *real signals* behind your resume—so you can show what you\'re capable of, not just what you\'ve done.
 
 **Why Skippr?**
-- Verifies your resume data with AI  
-- Matches you to job descriptions semantically, not just by title  
-- Builds a personalized growth roadmap  
+- Verifies your resume data with AI
+- Matches you to job descriptions semantically, not just by title
+- Builds a personalized growth roadmap
 - Helps recruiters see *you*, not just your job history
 
 Let\'s skip the noise—and unlock your potential.
@@ -348,7 +371,6 @@ Let\'s skip the noise—and unlock your potential.
 st.markdown("""
 # 🌟 Welcome to Skippr
 
-At Skippr, we believe great talent shouldn't get lost in outdated filters or keyword games.  
 We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
@@ -362,7 +384,6 @@ Let’s skip the noise—and unlock your potential.
 
 st.markdown("""
 
-At Skippr, we believe great talent shouldn't get lost in outdated filters or keyword games.  
 We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
