@@ -4,6 +4,7 @@
 import streamlit as st
 import os
 import openai
+import ast
 import pdfplumber
 import pandas as pd
 import numpy as np
@@ -62,57 +63,41 @@ leadership_skills = ["Ownership", "Bias for Action", "Earn Trust", "Deliver Resu
                      "Dive Deep", "Frugality", "Have Backbone"]
 
 def extract_skills_from_resume(text):
-    prompt = f"""Extract 5-10 professional skills from this resume:
-
-{text}
-
-Return as a Python list."""
-{text}
-Return as a Python list."
+    prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
         )
-        return eval(res.choices[0].message.content.strip())
+        return ast.literal_eval(res.choices[0].message.content.strip())
     except:
         return ["Python", "SQL", "Excel"]
 
 def extract_contact_info(text):
-    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.
-
-{text}"
+    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\n\n{text}"
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2
         )
-        return eval(res.choices[0].message.content.strip())
+        return ast.literal_eval(res.choices[0].message.content.strip())
     except:
         return {"name": "", "email": "", "title": ""}
 
 def match_resume_to_jds(resume_text, jd_texts):
-    prompt = f"Given this resume:
-{resume_text}
-
-Match semantically to the following JDs:
-"
+    prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following JDs:\n"
     for i, jd in enumerate(jd_texts):
-        prompt += f"
-JD {i+1}:
-{jd}
-"
-    prompt += "
-Return a list of match scores, e.g. [82, 76]"
+        prompt += f"\nJD {i+1}:\n{jd}\n"
+    prompt += "\nReturn a list of match scores, e.g. [82, 76]"
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )
-        return eval(res.choices[0].message.content.strip())
+        return ast.literal_eval(res.choices[0].message.content.strip())
     except:
         return [np.random.randint(70, 90) for _ in jd_texts]
 
@@ -145,7 +130,7 @@ def candidate_journey():
 
     if step == 0:
         st.subheader("📝 Step 1: Candidate Info + Portfolio Sync")
-        st.markdown("Welcome! Let's start with your contact info and resume.")
+        st.markdown("Welcome! Let’s start with your contact info and resume.")
         contact_info = st.session_state.get("resume_contact", {"cand_name": "", "cand_email": "", "cand_title": ""})
         name_val = st.text_input("Full Name", key="cand_name", value=contact_info.get("cand_name", ""))
         email_val = st.text_input("Email", key="cand_email", value=contact_info.get("cand_email", ""))
@@ -158,8 +143,7 @@ def candidate_journey():
         if uploaded:
             if uploaded.type == "application/pdf":
                 with pdfplumber.open(uploaded) as pdf:
-                    text = "
-".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+                    text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
             else:
                 text = uploaded.read().decode("utf-8", errors="ignore")
             st.session_state.resume_text = text
@@ -278,7 +262,7 @@ def candidate_journey():
         st.subheader("📈 Growth Roadmap")
         for rec in generate_growth_recs():
             st.markdown(rec)
-        st.success("🎉 You've completed your GrowScore profile!")
+        st.success("🎉 You’ve completed your GrowScore profile!")
 
 # ------------------- Recruiter Dashboard -------------------
 def recruiter_dashboard():
