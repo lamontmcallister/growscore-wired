@@ -3,3 +3,12 @@ headless = true
 
 [python]
 version = "3.11"
+
+
+
+[theme]
+primaryColor = "#3D5AFE"
+backgroundColor = "#F5F7FA"
+secondaryBackgroundColor = "#D6D8F5"
+textColor = "#111827"
+font = "sans serif"
