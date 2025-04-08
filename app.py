@@ -69,7 +69,7 @@ def extract_skills_from_resume(text):
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
         )
-        return eval(res.choices[0].message.content.strip())
+        return ast.literal_eval(res.choices[0].message.content.strip())
     except:
         return ["Python", "SQL", "Excel"]
 
@@ -81,7 +81,7 @@ def extract_contact_info(text):
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2
         )
-        return eval(res.choices[0].message.content.strip())
+        return ast.literal_eval(res.choices[0].message.content.strip())
     except:
         return {"name": "", "email": "", "title": ""}
 
@@ -96,7 +96,7 @@ def match_resume_to_jds(resume_text, jd_texts):
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )
-        return eval(res.choices[0].message.content.strip())
+        return ast.literal_eval(res.choices[0].message.content.strip())
     except:
         return [np.random.randint(70, 90) for _ in jd_texts]
 
