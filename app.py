@@ -333,7 +333,7 @@ st.markdown("""
 # Welcome to Skippr
 **Human-first hiring. Verified skills. Smarter decisions.**
 
-We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
+We use AI to surface the *real signals* behind your resume-so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
 - Verifies your resume data with AI
@@ -341,13 +341,13 @@ We use AI to surface the *real signals* behind your resume—so you can show wha
 - Builds a personalized growth roadmap
 - Helps recruiters see *you*, not just your job history
 
-Let’s skip the noise—and unlock your potential.
+Let’s skip the noise-and unlock your potential.
 """)
 st.markdown("""
 # Welcome to Skippr
 **Human-first hiring. Verified skills. Smarter decisions.**
 
-We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
+We use AI to surface the *real signals* behind your resume-so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
 - Verifies your resume data with AI
@@ -355,12 +355,12 @@ We use AI to surface the *real signals* behind your resume—so you can show wha
 - Builds a personalized growth roadmap
 - Helps recruiters see *you*, not just your job history
 
-Let’s skip the noise—and unlock your potential.
+Let’s skip the noise-and unlock your potential.
 """)
 st.markdown("""
 # Welcome to Skippr
 
-We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
+We use AI to surface the *real signals* behind your resume-so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
 - Builds a personalized growth roadmap
@@ -369,28 +369,28 @@ We use AI to surface the *real signals* behind your resume—so you can show wha
 """)
 st.markdown("""
 # Welcome to Skippr
-We use AI to surface the *real signals* behind your resume—so you can show what you\047re capable of, not just what you\047ve done.\n
+We use AI to surface the *real signals* behind your resume-so you can show what you\047re capable of, not just what you\047ve done.\n
 **Why Skippr?**
 - Builds a personalized growth roadmap
 - Helps recruiters see *you*, not just your job history\n
-Let\047s skip the noise—and unlock your potential.
+Let\047s skip the noise-and unlock your potential.
 """)
 st.markdown("""
 # Welcome to Skippr
 
-We use AI to surface the *real signals* behind your resume—so you can show what you\'re capable of, not just what you\'ve done.
+We use AI to surface the *real signals* behind your resume-so you can show what you\'re capable of, not just what you\'ve done.
 
 **Why Skippr?**
 - Builds a personalized growth roadmap
 - Helps recruiters see *you*, not just your job history
 
-Let\'s skip the noise—and unlock your potential.
+Let\'s skip the noise-and unlock your potential.
 """)
 
 st.markdown("""
 # 🌟 Welcome to Skippr
 
-We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
+We use AI to surface the *real signals* behind your resume-so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
 - 🔍 Matches you to job descriptions semantically, not just by title
@@ -401,7 +401,7 @@ We use AI to surface the *real signals* behind your resume—so you can show wha
 
 st.markdown("""
 
-We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
+We use AI to surface the *real signals* behind your resume-so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
 - 🔍 Matches you to job descriptions semantically, not just by title
