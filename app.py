@@ -146,7 +146,7 @@ st.progress((step + 1) / 9)
 
 if step == 0:
 st.subheader("📝 Step 1: Candidate Info + Portfolio Sync")
-st.markdown("Welcome! Let’s start with your contact info and resume.")
+st.markdown("Welcome! Let's start with your contact info and resume.")
 contact_info = st.session_state.get("resume_contact", {"cand_name": "", "cand_email": "", "cand_title": ""})
 name_val = st.text_input("Full Name", key="cand_name", value=contact_info.get("cand_name", ""))
 email_val = st.text_input("Email", key="cand_email", value=contact_info.get("cand_email", ""))
@@ -278,7 +278,7 @@ st.table({
 st.subheader("📈 Growth Roadmap")
 for rec in generate_growth_recs():
 st.markdown(rec)
-st.success("🎉 You’ve completed your Skippr profile!")
+st.success("🎉 You've completed your Skippr profile!")
 
 # ------------------- Recruiter Dashboard -------------------
 def recruiter_dashboard():
@@ -341,7 +341,7 @@ We use AI to surface the *real signals* behind your resume-so you can show what 
 - Builds a personalized growth roadmap
 - Helps recruiters see *you*, not just your job history
 
-Let’s skip the noise-and unlock your potential.
+Let's skip the noise-and unlock your potential.
 """)
 st.markdown("""
 # Welcome to Skippr
@@ -355,7 +355,7 @@ We use AI to surface the *real signals* behind your resume-so you can show what 
 - Builds a personalized growth roadmap
 - Helps recruiters see *you*, not just your job history
 
-Let’s skip the noise-and unlock your potential.
+Let's skip the noise-and unlock your potential.
 """)
 st.markdown("""
 # Welcome to Skippr
