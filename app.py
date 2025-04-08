@@ -333,7 +333,6 @@ st.markdown("""
 # Welcome to Skippr
 **Human-first hiring. Verified skills. Smarter decisions.**
 
-At Skippr, we believe great talent shouldn't get lost in outdated filters or keyword games.
 We use AI to surface the *real signals* behind your resume—so you can show what you're capable of, not just what you've done.
 
 **Why Skippr?**
