@@ -13,19 +13,23 @@ from supabase import create_client, Client
 from datetime import datetime
 
 st.set_page_config(page_title="Skippr", layout="wide")
+st.markdown("""
+<style>
+    section[data-testid="stSidebar"] {
+        background-color: #003366 !important;
+        color: white;
+    }
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 
 # Apply custom CSS from assets
 try:
     with open("assets/style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    st.markdown("""
-<style>
-    section[data-testid="stSidebar"] * {
-        color: white !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 except FileNotFoundError:
     st.warning("⚠️ Custom CSS not found. Using default styling.")
 
@@ -40,25 +44,22 @@ openai.api_key = OPENAI_KEY
 
 # Auth state
 
+
+
 # Branding Header with logo
 try:
-    st.image("assets/logo.png", width=180)
+    st.image("assets/logo.png", width=200)  # Enlarged logo
 except FileNotFoundError:
     st.warning("⚠️ Logo not found — skipping logo display.")
 
 st.markdown("""
-<div style='text-align: center; margin-top: -10px;'>
-    <h1 style='color: #0073e6;'>Welcome to Skippr</h1>
-    <p style='color: #0073e6; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
+<div style='text-align: center; background-color: #003366; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+    <h1 style='color: white; font-size: 36px;'>Welcome to Skippr</h1>
+    <p style='color: white; font-size: 18px;'>Helping you skip the noise and land faster.</p>
 </div>
 """, unsafe_allow_html=True)
-    st.markdown("""
-<style>
-    section[data-testid="stSidebar"] * {
-        color: white !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+, unsafe_allow_html=True)
+, unsafe_allow_html=True)
 
 
 if "supabase_session" not in st.session_state:
@@ -79,6 +80,15 @@ with st.sidebar:
                 st.session_state.supabase_session = result.session
                 st.session_state.supabase_user = result.user
                 st.success(f"✅ Logged in as {email}")
+
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"][aria-expanded="true"]{
+            display: none;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
             except Exception as e:
                 st.error(f"Login failed: {e}")
     else:
@@ -89,18 +99,8 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
-
-# Hide sidebar after login
-if st.session_state.supabase_session:
-    st.markdown("""
-        <style>
-            section[data-testid="stSidebar"] { display: none !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
-
-    if not st.session_state.supabase_session:
-    
+if not st.session_state.supabase_session:
+    st.warning("❌ No active session. Please log in.")
     st.stop()
     
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
