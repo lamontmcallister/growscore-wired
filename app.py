@@ -45,19 +45,16 @@ openai.api_key = OPENAI_KEY
 
 
 
-# Branding Header
-try:
-    st.image("assets/logo.png")
-except FileNotFoundError:
-    st.warning("⚠️ Logo not found — skipping logo display.")
 
-branding_html = """
-<div style='text-align: center; background-color: #003366; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-    <h1 style='color: white; font-size: 36px;'>Welcome to Skippr</h1>
-    <p style='color: white; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
-</div>
-"""
-st.markdown(branding_html, unsafe_allow_html=True)
+# Branding Header
+st.image("assets/logo.png", width=100)
+st.markdown("""
+    <div style='text-align: center; background-color: #003366; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+        <h1 style='color: #ffffff; font-size: 36px; margin-bottom: 0;'>Welcome to Skippr</h1>
+        <p style='color: #ffffff; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
+    </div>
+""", unsafe_allow_html=True)
+
 
 
 
