@@ -13,8 +13,12 @@ from datetime import datetime
 st.set_page_config(page_title="Skippr", layout="wide")
 
 # Inject custom CSS from assets
-with open("assets/style.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+try:
+    with open("assets/style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    st.warning("⚠️ Custom CSS not found. Using default Streamlit styling.")
+
 
 # Branding Header
 st.image("assets/logo.png", width=120)
