@@ -50,11 +50,7 @@ if "supabase_user" not in st.session_state:
 
 # Login UI
 st.info('🔐 Login temporarily disabled for MVP testing.')
-    auth_key = f"login_auth_mode_{uuid.uuid4()}"
-    auth_mode = st.radio("Choose Action", ["Login", "Sign Up"], key=auth_key)
-    email = st.text_input("Email", key="email_input")
-    password = st.text_input("Password", type="password", key="password_input")
-    if auth_mode == "Login":
+                    if auth_mode == "Login":
         if st.button("🔓 Login"):
             try:
                 result = supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -202,8 +198,7 @@ def candidate_journey():
         def add_ref(i):
             with st.expander(f"Reference {i+1}"):
                 name = st.text_input("Name", key=f"ref_name_{i}")
-                email = st.text_input("Email", key=f"ref_email_{i}")
-                role = st.selectbox("Relationship", ["Manager", "Peer", "Direct Report"], key=f"ref_role_{i}")
+                                role = st.selectbox("Relationship", ["Manager", "Peer", "Direct Report"], key=f"ref_role_{i}")
                 trait = st.selectbox("Leadership Trait", leadership_skills, key=f"ref_trait_{i}")
                 sent = st.button(f"Send to {name or f'Ref {i+1}'}", key=f"send_ref_{i}")
                 return {"name": name, "email": email, "role": role, "trait": trait, "status": "✅ Sent" if sent else "⏳ Pending"}
@@ -214,8 +209,7 @@ def candidate_journey():
     elif step == 4:
         st.subheader("🏢 Step 5: Backchannel Reference")
         name = st.text_input("Contact Name", key="bc_name")
-        email = st.text_input("Email", key="bc_email")
-        topic = st.text_area("What would you like them to share insight about?", key="bc_topic")
+                topic = st.text_area("What would you like them to share insight about?", key="bc_topic")
         if st.button("Send Backchannel Request"):
             st.session_state.backchannel = {"name": name, "email": email, "topic": topic, "status": "✅ Sent"}
             st.success("Backchannel request sent.")
