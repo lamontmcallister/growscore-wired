@@ -19,6 +19,13 @@ st.set_page_config(page_title="Skippr", layout="wide")
 try:
     with open("assets/style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    st.markdown("""
+<style>
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 except FileNotFoundError:
     st.warning("⚠️ Custom CSS not found. Using default styling.")
 
@@ -35,15 +42,22 @@ openai.api_key = OPENAI_KEY
 
 # Branding Header with logo
 try:
-    st.image("assets/logo.png", width=120)
+    st.image("assets/logo.png", width=180)
 except FileNotFoundError:
     st.warning("⚠️ Logo not found — skipping logo display.")
 
 st.markdown("""
 <div style='text-align: center; margin-top: -10px;'>
-    <h1 style='color: white;'>Welcome to Skippr</h1>
-    <p style='color: #CCCCCC; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
+    <h1 style='color: #0073e6;'>Welcome to Skippr</h1>
+    <p style='color: #0073e6; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
 </div>
+""", unsafe_allow_html=True)
+    st.markdown("""
+<style>
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+</style>
 """, unsafe_allow_html=True)
 
 
@@ -75,8 +89,18 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
-if not st.session_state.supabase_session:
-    st.warning("❌ No active session. Please log in.")
+
+# Hide sidebar after login
+if st.session_state.supabase_session:
+    st.markdown("""
+        <style>
+            section[data-testid="stSidebar"] { display: none !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    if not st.session_state.supabase_session:
+    
     st.stop()
     
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
