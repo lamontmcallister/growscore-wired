@@ -1,3 +1,19 @@
+
+# Branding Header with logo
+try:
+    st.image("assets/logo.png", width=200)
+except FileNotFoundError:
+    st.warning("⚠️ Logo not found — skipping logo display.")
+
+branding_html = """
+<div style='text-align: center; background-color: #003366; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+    <h1 style='color: white; font-size: 36px;'>Welcome to Skippr</h1>
+    <p style='color: white; font-size: 18px;'>Helping you skip the noise and land faster.</p>
+</div>
+"""
+st.markdown(branding_html, unsafe_allow_html=True)
+
+
 # Full GrowScore platform with all modules and updated login UI
 
 
@@ -13,17 +29,7 @@ from supabase import create_client, Client
 from datetime import datetime
 
 st.set_page_config(page_title="Skippr", layout="wide")
-st.markdown("""
-<style>
-    section[data-testid="stSidebar"] {
-        background-color: #003366 !important;
-        color: white;
-    }
-    section[data-testid="stSidebar"] * {
-        color: white !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+
 
 
 # Apply custom CSS from assets
@@ -84,13 +90,7 @@ with st.sidebar:
                 st.session_state.supabase_user = result.user
                 st.success(f"✅ Logged in as {email}")
 
-    st.markdown("""
-        <style>
-        [data-testid="stSidebar"][aria-expanded="true"]{
-            display: none;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    
 
             except Exception as e:
                 st.error(f"Login failed: {e}")
