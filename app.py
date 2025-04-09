@@ -47,7 +47,7 @@ openai.api_key = OPENAI_KEY
 
 # Branding Header
 try:
-    st.image("assets/logo.png", width=220)
+    st.image("assets/logo.png")
 except FileNotFoundError:
     st.warning("⚠️ Logo not found — skipping logo display.")
 
