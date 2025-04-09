@@ -16,7 +16,7 @@ st.set_page_config(page_title="Skippr", layout="wide")
 
 st.markdown("""
     st.markdown("""
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True), unsafe_allow_html=True)
 
 
 
@@ -30,7 +30,7 @@ try:
         color: white !important;
     }
 </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True), unsafe_allow_html=True)
 except FileNotFoundError:
     st.warning("⚠️ Custom CSS not found. Using default styling.")
 
@@ -56,14 +56,14 @@ st.markdown("""
     <h1 style='color: #0073e6;'>Welcome to Skippr</h1>
     <p style='color: #0073e6; font-size: 18px;'>Helping you skip the noise and land faster.</p>
 </div>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True), unsafe_allow_html=True)
     st.markdown("""
 <style>
     section[data-testid="stSidebar"] * {
         color: white !important;
     }
 </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True), unsafe_allow_html=True)
 
 
 if "supabase_session" not in st.session_state:
@@ -101,7 +101,7 @@ if st.session_state.supabase_session:
         <style>
             section[data-testid="stSidebar"] { display: none !important; }
         </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True), unsafe_allow_html=True)
 
 
     if not st.session_state.supabase_session:
