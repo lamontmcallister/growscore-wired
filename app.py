@@ -51,7 +51,7 @@ if "supabase_user" not in st.session_state:
 if not st.session_state.supabase_session:
     with st.sidebar:
         st.markdown("<h3 style='color: white;'>🧭 Candidate Login</h3>", unsafe_allow_html=True)
-        auth_mode = st.radio("Choose Action", ["Login", "Sign Up"], key="auth_mode")
+        auth_mode = st.radio("Choose Action", ["Login", "Sign Up"], key="login_auth_mode")
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
         if auth_mode == "Login":
@@ -70,7 +70,7 @@ if not st.session_state.supabase_session:
                     st.success("✅ Account created. Check email for verification.")
                 except Exception as e:
                     st.error(f"Signup failed: {e}")
-    auth_mode = st.radio("Choose Action", ["Login", "Sign Up"], key="auth_mode")
+    auth_mode = st.radio("Choose Action", ["Login", "Sign Up"], key="login_auth_mode")
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
     if auth_mode == "Login":
