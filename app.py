@@ -44,6 +44,7 @@ openai.api_key = OPENAI_KEY
 # Auth state
 
 
+
 # Branding Header
 try:
     st.image("assets/logo.png", width=220)
@@ -57,6 +58,7 @@ branding_html = """
 </div>
 """
 st.markdown(branding_html, unsafe_allow_html=True)
+
 
 
 
