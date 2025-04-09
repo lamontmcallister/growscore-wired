@@ -54,8 +54,8 @@ if not st.session_state.supabase_session:
         st.markdown("<h3 style='color: white;'>🧭 Candidate Login</h3>", unsafe_allow_html=True)
         auth_key = f"login_auth_mode_{uuid.uuid4()}"
         auth_mode = st.radio("Choose Action", ["Login", "Sign Up"], key=auth_key)
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
+        email = st.text_input("Email", key="email_input")
+        password = st.text_input("Password", type="password", key="password_input")
         if auth_mode == "Login":
             if st.button("🔓 Login"):
                 try:
@@ -74,8 +74,8 @@ if not st.session_state.supabase_session:
                     st.error(f"Signup failed: {e}")
     auth_key = f"login_auth_mode_{uuid.uuid4()}"
     auth_mode = st.radio("Choose Action", ["Login", "Sign Up"], key=auth_key)
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", key="email_input")
+    password = st.text_input("Password", type="password", key="password_input")
     if auth_mode == "Login":
         if st.button("🔓 Login"):
             try:
