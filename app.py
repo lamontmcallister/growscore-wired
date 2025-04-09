@@ -1,4 +1,3 @@
-import uuid
 # Full GrowScore platform with all modules and updated login UI
 
 
@@ -34,10 +33,15 @@ openai.api_key = OPENAI_KEY
 
 # Auth state
 
+# Branding Header with logo
+try:
+    st.image("assets/logo.png", width=120)
+except FileNotFoundError:
+    st.warning("⚠️ Logo not found — skipping logo display.")
 
 st.markdown("""
 <div style='text-align: center; margin-top: -10px;'>
-    <h1 style='color: #0066cc;'>Welcome to Skippr</h1>
+    <h1 style='color: white;'>Welcome to Skippr</h1>
     <p style='color: #CCCCCC; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
 </div>
 """, unsafe_allow_html=True)
@@ -49,8 +53,28 @@ if "supabase_user" not in st.session_state:
     st.session_state.supabase_user = None
 
 # Login UI
-st.info('🔐 Login temporarily disabled for MVP testing.')
-                    
+with st.sidebar:
+    st.header("🧭 Candidate Login")
+    auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    if auth_mode == "Login":
+        if st.button("🔓 Login"):
+            try:
+                result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                st.session_state.supabase_session = result.session
+                st.session_state.supabase_user = result.user
+                st.success(f"✅ Logged in as {email}")
+            except Exception as e:
+                st.error(f"Login failed: {e}")
+    else:
+        if st.button("🆕 Register"):
+            try:
+                result = supabase.auth.sign_up({"email": email, "password": password})
+                st.success("✅ Account created. Check email for verification.")
+            except Exception as e:
+                st.error(f"Signup failed: {e}")
+
 if not st.session_state.supabase_session:
     st.warning("❌ No active session. Please log in.")
     st.stop()
@@ -182,7 +206,8 @@ def candidate_journey():
         def add_ref(i):
             with st.expander(f"Reference {i+1}"):
                 name = st.text_input("Name", key=f"ref_name_{i}")
-                                role = st.selectbox("Relationship", ["Manager", "Peer", "Direct Report"], key=f"ref_role_{i}")
+                email = st.text_input("Email", key=f"ref_email_{i}")
+                role = st.selectbox("Relationship", ["Manager", "Peer", "Direct Report"], key=f"ref_role_{i}")
                 trait = st.selectbox("Leadership Trait", leadership_skills, key=f"ref_trait_{i}")
                 sent = st.button(f"Send to {name or f'Ref {i+1}'}", key=f"send_ref_{i}")
                 return {"name": name, "email": email, "role": role, "trait": trait, "status": "✅ Sent" if sent else "⏳ Pending"}
@@ -193,7 +218,8 @@ def candidate_journey():
     elif step == 4:
         st.subheader("🏢 Step 5: Backchannel Reference")
         name = st.text_input("Contact Name", key="bc_name")
-                topic = st.text_area("What would you like them to share insight about?", key="bc_topic")
+        email = st.text_input("Email", key="bc_email")
+        topic = st.text_area("What would you like them to share insight about?", key="bc_topic")
         if st.button("Send Backchannel Request"):
             st.session_state.backchannel = {"name": name, "email": email, "topic": topic, "status": "✅ Sent"}
             st.success("Backchannel request sent.")
@@ -301,7 +327,7 @@ def recruiter_dashboard():
     st.subheader("🎯 AI Recommendations")
     for _, row in filtered.iterrows():
         if row["QoH Score"] >= 90:
-            st.success(f"{row['Candidate']}: Strong hire. Green light.")
+            st.success(f"{row['Candidate']}: 🚀 Strong hire. Green light.")
         elif row["Reference"] < 75:
             st.warning(f"{row['Candidate']}: ⚠️ Weak reference. Needs follow-up.")
         elif row["Skill"] < 80:
@@ -310,7 +336,7 @@ def recruiter_dashboard():
             st.write(f"{row['Candidate']}: Ready for interviews.")
 
 # ------------------- Routing -------------------
-st.title("Welcome to GrowScore")
+st.title("🚀 Welcome to GrowScore")
 portal = st.radio("Choose your portal:", ["👤 Candidate Portal", "🧑‍💼 Recruiter Portal"])
 if portal == "👤 Candidate Portal":
     candidate_journey()
