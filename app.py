@@ -1,65 +1,48 @@
-# Full GrowScore platform with all modules and updated login UI
-
+# Skippr — Full MVP (Part 1: Candidate Journey + Demo & Pilot Modes)
 
 import streamlit as st
 import os
 import openai
-import ast
 import pdfplumber
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from supabase import create_client, Client
 from datetime import datetime
+from supabase import create_client, Client
 
+# === Page Config ===
 st.set_page_config(page_title="Skippr", layout="wide")
 
-
-# Apply custom CSS from assets
+# === Load CSS ===
 try:
     with open("assets/style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
     st.warning("⚠️ Custom CSS not found. Using default styling.")
 
-
-# Load secrets
+# === Secrets & Supabase Setup ===
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
 OPENAI_KEY = st.secrets["openai"]["key"]
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Auth state
-
-# Branding Header with logo
-try:
-    st.image("assets/logo.png", width=120)
-except FileNotFoundError:
-    st.warning("⚠️ Logo not found — skipping logo display.")
-
-st.markdown("""
-<div style='text-align: center; margin-top: -10px;'>
-    <h1 style='color: white;'>Welcome to Skippr</h1>
-    <p style='color: #CCCCCC; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
-</div>
-""", unsafe_allow_html=True)
-
-
+# === Session State ===
 if "supabase_session" not in st.session_state:
     st.session_state.supabase_session = None
 if "supabase_user" not in st.session_state:
     st.session_state.supabase_user = None
+if "profile_data" not in st.session_state:
+    st.session_state.profile_data = {}
 
-# Login UI
+# === Sidebar Login ===
 with st.sidebar:
-    st.header("🧭 Candidate Login")
-    auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
+    st.header("Login to Skippr")
+    auth_mode = st.radio("Choose", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
     if auth_mode == "Login":
-        if st.button("🔓 Login"):
+        if st.button("Login"):
             try:
                 result = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state.supabase_session = result.session
@@ -68,278 +51,148 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"Login failed: {e}")
     else:
-        if st.button("🆕 Register"):
+        if st.button("Register"):
             try:
                 result = supabase.auth.sign_up({"email": email, "password": password})
-                st.success("✅ Account created. Check email for verification.")
+                st.success("✅ Account created. Check your inbox to verify.")
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
 if not st.session_state.supabase_session:
-    st.warning("❌ No active session. Please log in.")
+    st.warning("⚠️ Please log in to continue.")
     st.stop()
-    
-skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
-               "Communication", "Strategic Planning", "Excel", "Machine Learning"]
 
-leadership_skills = ["Ownership", "Bias for Action", "Earn Trust", "Deliver Results",
-                     "Think Big", "Customer Obsession", "Invent & Simplify", "Hire & Develop",
-                     "Dive Deep", "Frugality", "Have Backbone"]
+# === Hero Header ===
+st.markdown("""
+<div style='text-align: center; padding: 2rem 0;'>
+    <h1 style='font-size: 3rem; margin-bottom: 0.2rem;'>Welcome to Skippr</h1>
+    <p style='font-size: 1.2rem; color: #555;'>Predictive hiring intelligence. Powered by AI. Backed by human potential.</p>
+</div>
+""", unsafe_allow_html=True)
 
-def extract_skills_from_resume(text):
-    prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
-    try:
-        res = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        return ast.literal_eval(res.choices[0].message.content.strip())
-    except:
-        return ["Python", "SQL", "Excel"]
+# === Demo Mode Toggle ===
+demo_mode = st.checkbox("Demo Mode", value=False, help="Use pre-filled resume and JD for demo purposes.")
+if demo_mode:
+    st.info("✅ Demo Mode is ON — sample data loaded below.")
 
-def extract_contact_info(text):
-    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\n\n{text}"
-    try:
-        res = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
-        )
-        return ast.literal_eval(res.choices[0].message.content.strip())
-    except:
-        return {"name": "", "email": "", "title": ""}
+# === Candidate Journey ===
+st.header("Candidate Journey")
 
-def match_resume_to_jds(resume_text, jd_texts):
-    prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following JDs:\n"
-    for i, jd in enumerate(jd_texts):
-        prompt += f"\nJD {i+1}:\n{jd}\n"
-    prompt += "\nReturn a list of match scores, e.g. [82, 76]"
-    try:
-        res = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-        )
-        return ast.literal_eval(res.choices[0].message.content.strip())
-    except:
-        return [np.random.randint(70, 90) for _ in jd_texts]
+# Step 1: Resume Upload
+st.subheader("1. Upload Your Resume")
+resume_file = st.file_uploader("Upload PDF", type="pdf")
+resume_text = ""
 
-def plot_radar(jd_scores):
-    labels = [f"JD {i+1}" for i in range(len(jd_scores))]
-    angles = np.linspace(0, 2 * np.pi, len(jd_scores), endpoint=False).tolist()
-    scores = jd_scores + jd_scores[:1]
-    angles += angles[:1]
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-    ax.plot(angles, scores, 'o-', linewidth=2)
-    ax.fill(angles, scores, alpha=0.25)
-    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
-    ax.set_ylim(0, 100)
+if resume_file or demo_mode:
+    if demo_mode:
+        resume_text = "Experienced leader in operations, recruiting analytics, and talent systems. Skilled in Python, SQL, stakeholder communication."
+    else:
+        with pdfplumber.open(resume_file) as pdf:
+            for page in pdf.pages:
+                resume_text += page.extract_text()
+    st.success("✅ Resume processed.")
+    st.text_area("Resume Text", resume_text, height=200)
+
+# Step 2: Job Description
+st.subheader("2. Paste Job Description")
+job_desc = st.text_area("Paste the JD:", "" if not demo_mode else "Looking for a Director of Recruiting Ops to lead reporting, analytics, and cross-functional hiring initiatives.")
+
+# Step 3: JD Matching
+if resume_text and job_desc:
+    st.subheader("3. Resume vs JD Match")
+    resume_words = set(resume_text.lower().split())
+    jd_words = set(job_desc.lower().split())
+    overlap = resume_words.intersection(jd_words)
+    match_score = len(overlap) / max(len(jd_words), 1) * 100
+    st.metric("Match Score", f"{match_score:.1f}%")
+
+    fig, ax = plt.subplots()
+    ax.pie([match_score, 100 - match_score], labels=["Match", "Gap"], autopct='%1.1f%%', startangle=90)
+    ax.axis("equal")
     st.pyplot(fig)
 
-def generate_growth_recs():
-    return [
-        "- [Coursera: Data & Business Skills](https://coursera.org)",
-        "- [LinkedIn Learning: Leadership Path](https://linkedin.com/learning)",
-        "- Join a cross-functional project in your org",
-        "- Set a 30/60/90 SMART goal around growth gaps"
-        ]
-        # ------------------- Candidate Journey -------------------
-def candidate_journey():
-    st.title("🌱 Candidate Journey")
-    step = st.session_state.get("step", 0)
-    def next_step(): st.session_state.step = step + 1
-    def prev_step(): st.session_state.step = max(0, step - 1)
-    st.progress((step + 1) / 9)
+    # Save to Supabase if not in Demo Mode
+    if not demo_mode:
+        try:
+            user_id = st.session_state.supabase_user.id
+            timestamp = datetime.utcnow().isoformat()
+            supabase.table("matches").insert({
+                "user_id": user_id,
+                "resume_text": resume_text,
+                "job_description": job_desc,
+                "match_score": match_score,
+                "timestamp": timestamp
+            }).execute()
+            st.success("📬 Data saved to Supabase.")
+        except Exception as e:
+            st.warning(f"Could not save: {e}")
 
-    if step == 0:
-        st.subheader("📝 Step 1: Candidate Info + Portfolio Sync")
-        st.markdown("Welcome! Let’s start with your contact info and resume.")
-        contact_info = st.session_state.get("resume_contact", {"cand_name": "", "cand_email": "", "cand_title": ""})
-        name_val = st.text_input("Full Name", key="cand_name", value=contact_info.get("cand_name", ""))
-        email_val = st.text_input("Email", key="cand_email", value=contact_info.get("cand_email", ""))
-        title_val = st.text_input("Target Job Title", key="cand_title", value=contact_info.get("cand_title", ""))
-        st.text_input("🔗 LinkedIn Profile", key="cand_linkedin")
-        st.text_input("🔗 GitHub Profile", key="cand_github")
-        st.text_input("🌐 Portfolio / Personal Site", key="cand_portfolio")
+# (More candidate journey steps like Skills, References, QoH, etc. to follow in next part...)
 
-        uploaded = st.file_uploader("📎 Upload Resume (PDF or TXT)", type=["pdf", "txt"])
-        if uploaded:
-            if uploaded.type == "application/pdf":
-                with pdfplumber.open(uploaded) as pdf:
-                    text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
-            else:
-                text = uploaded.read().decode("utf-8", errors="ignore")
-            st.session_state.resume_text = text
-            st.session_state.resume_skills = extract_skills_from_resume(text)
-            contact = extract_contact_info(text)
-            st.session_state["resume_contact"] = {
-                "cand_name": name_val or contact.get("name", ""),
-                "cand_email": email_val or contact.get("email", ""),
-                "cand_title": title_val or contact.get("title", "")
-            }
-            st.success("✅ Resume parsed and fields updated.")
+st.caption("Data shown above is for MVP preview only. Log in with your resume to test your own match score.")
+# Skippr — Full MVP (Part 2: Skills, References, QoH, Recruiter Dashboard)
 
-        st.button("Next", on_click=next_step)
+# === Candidate Journey Continued ===
 
-    elif step == 1:
-        st.subheader("🎯 Step 2: Select Your Top Skills")
-        st.markdown("Review and adjust the top skills extracted from your resume.")
-        selected = st.multiselect("Top Skills:", skills_pool, default=st.session_state.get("resume_skills", []))
-        st.session_state.selected_skills = selected
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+st.subheader("4. Skills Assessment")
+skill_options = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management", "Communication"]
+skills_selected = st.multiselect("Select your skills:", skill_options, default=skill_options[:3] if demo_mode else [])
 
-    elif step == 2:
-        st.subheader("📋 Step 3: Behavior Survey")
-        opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
-        score_map = {opt: i + 1 for i, opt in enumerate(opts)}
-        q1 = st.radio("I meet deadlines", opts, index=2)
-        q2 = st.radio("I collaborate effectively", opts, index=2)
-        q3 = st.radio("I adapt well to change", opts, index=2)
-        st.session_state.behavior_score = round((score_map[q1] + score_map[q2] + score_map[q3]) / 3 * 20, 1)
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+st.subheader("5. Add Education")
+edu_text = st.text_input("Highest Degree or School Name", "MBA in Finance - NYU" if demo_mode else "")
 
-    elif step == 3:
-        st.subheader("📨 Step 4: References (Simulated)")
-        def add_ref(i):
-            with st.expander(f"Reference {i+1}"):
-                name = st.text_input("Name", key=f"ref_name_{i}")
-                email = st.text_input("Email", key=f"ref_email_{i}")
-                role = st.selectbox("Relationship", ["Manager", "Peer", "Direct Report"], key=f"ref_role_{i}")
-                trait = st.selectbox("Leadership Trait", leadership_skills, key=f"ref_trait_{i}")
-                sent = st.button(f"Send to {name or f'Ref {i+1}'}", key=f"send_ref_{i}")
-                return {"name": name, "email": email, "role": role, "trait": trait, "status": "✅ Sent" if sent else "⏳ Pending"}
-        st.session_state.references = [add_ref(0), add_ref(1)]
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+st.subheader("6. References")
+reference_1 = st.text_input("Reference Name", "Jane Smith" if demo_mode else "")
+reference_email = st.text_input("Reference Email", "jane@example.com" if demo_mode else "")
+if reference_1 and reference_email:
+    st.success("✅ Reference saved.")
 
-    elif step == 4:
-        st.subheader("🏢 Step 5: Backchannel Reference")
-        name = st.text_input("Contact Name", key="bc_name")
-        email = st.text_input("Email", key="bc_email")
-        topic = st.text_area("What would you like them to share insight about?", key="bc_topic")
-        if st.button("Send Backchannel Request"):
-            st.session_state.backchannel = {"name": name, "email": email, "topic": topic, "status": "✅ Sent"}
-            st.success("Backchannel request sent.")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+st.subheader("7. Backchannel Input")
+backchannel = st.text_area("Name someone who has worked with the company/team you're applying to (optional):")
 
-    elif step == 5:
-        st.subheader("🎓 Step 6: Education")
-        degree = st.text_input("Degree", key="edu_degree")
-        major = st.text_input("Major", key="edu_major")
-        school = st.text_input("School", key="edu_school")
-        year = st.text_input("Graduation Year", key="edu_year")
-        edu_file = st.file_uploader("Upload transcript or diploma (optional)", type=["pdf"], key="edu_file")
-        st.session_state.education = f"{degree} in {major}, {school}, {year}"
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+st.subheader("8. HR Performance Check (Optional)")
+st.text("[Not functional yet – coming soon]")
 
-    elif step == 6:
-        st.subheader("🔐 Step 7: HR Performance Checkpoint")
-        st.warning("This is a future feature. No emails will be sent.")
-        st.text_input("Company", key="hr_company")
-        st.text_input("Manager", key="hr_manager")
-        st.text_input("HR Email (optional)", key="hr_email")
-        st.checkbox("I authorize GrowScore to verify past performance", key="hr_auth")
-        st.session_state.hr_check = "✅ HR Request Authorized (simulated)"
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+# === QoH Score Calculation ===
+st.subheader("9. Quality of Hire (QoH) Score")
+score_components = {
+    "JD Match": match_score if resume_text and job_desc else 0,
+    "Skills": len(skills_selected) * 10,
+    "References": 20 if reference_1 else 0,
+    "Education": 10 if edu_text else 0
+}
 
-    elif step == 7:
-        st.subheader("📄 Step 8: Resume vs JD Skill Match")
-        jd1 = st.text_area("Paste JD 1", key="jd_1")
-        jd2 = st.text_area("Paste JD 2", key="jd_2")
-        jd_inputs = [jd for jd in [jd1, jd2] if jd.strip()]
-        if jd_inputs and "resume_text" in st.session_state:
-            jd_scores = match_resume_to_jds(st.session_state.resume_text, jd_inputs)
-            st.session_state.jd_scores = jd_scores
-            for i, score in enumerate(jd_scores):
-                st.write(f"**JD {i+1}** Match Score: {score}%")
-            plot_radar(jd_scores)
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+total_qoh = sum(score_components.values()) / 4
+st.metric("Final QoH Score", f"{total_qoh:.1f}")
 
-    elif step == 8:
-        st.subheader("✅ Step 9: Final Summary & Growth Roadmap")
-        jd_scores = st.session_state.get("jd_scores", [])
-        avg_jd = round(sum(jd_scores) / len(jd_scores), 1) if jd_scores else 0
-        skill_score = len(st.session_state.get("selected_skills", [])) * 5
-        ref_score = 90
-        behavior = st.session_state.get("behavior_score", 50)
-        qoh = round((skill_score + ref_score + behavior + avg_jd) / 4, 1)
-        st.metric("💡 Quality of Hire Score", f"{qoh}/100")
+st.progress(int(total_qoh))
 
-        st.subheader("🔍 Verification Table")
-        st.table({
-            "Resume": ["✅ GPT Verified"],
-            "References": ["✅ Sent"],
-            "Backchannel": [st.session_state.get("backchannel", {}).get("status", "❌")],
-            "Education": ["✅" if st.session_state.get("education") else "❌"],
-            "HR Performance": [st.session_state.get("hr_check", "❌")],
-            "Behavior": ["🟠 Self-Reported"],
-            "JD Match": [f"{avg_jd}%"]
-        })
+# === Recruiter Dashboard ===
+st.header("Recruiter Dashboard")
 
-        st.subheader("📈 Growth Roadmap")
-        for rec in generate_growth_recs():
-            st.markdown(rec)
-        st.success("🎉 You’ve completed your GrowScore profile!")
+# Example candidate comparison table
+st.subheader("Candidate Comparison")
+data = {
+    "Candidate": ["You", "Demo User"],
+    "QoH Score": [total_qoh, 72.5],
+    "Match %": [match_score if resume_text and job_desc else 0, 68.0],
+    "Skills Gap": ["2 missing", "3 missing"]
+}
+df = pd.DataFrame(data)
+st.dataframe(df, use_container_width=True)
 
-# ------------------- Recruiter Dashboard -------------------
-def recruiter_dashboard():
-    st.title("🧑‍💼 Recruiter Dashboard")
-    with st.sidebar.expander("🎚️ QoH Weight Sliders", expanded=True):
-        w_jd = st.slider("JD Match", 0, 100, 25)
-        w_ref = st.slider("References", 0, 100, 25)
-        w_beh = st.slider("Behavior", 0, 100, 25)
-        w_skill = st.slider("Skills", 0, 100, 25)
+# Adjustable Weight Sliders
+st.subheader("Adjust QoH Weighting")
+match_weight = st.slider("JD Match %", 0, 100, 25)
+skill_weight = st.slider("Skills", 0, 100, 25)
+ref_weight = st.slider("References", 0, 100, 25)
+ed_weight = st.slider("Education", 0, 100, 25)
 
-    total = w_jd + w_ref + w_beh + w_skill
-    if total == 0:
-        st.warning("Adjust sliders to view scores.")
-        return
+st.caption("Adjust the sliders to model your ideal candidate profile.")
 
-    df = pd.DataFrame([
-        {"Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84, "Skill": 92,
-         "Gaps": "Strategic Planning", "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education, 🔐 HR"},
-        {"Candidate": "Jasmine", "JD Match": 82, "Reference": 78, "Behavior": 90, "Skill": 80,
-         "Gaps": "Leadership", "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"},
-        {"Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70, "Skill": 78,
-         "Gaps": "Communication", "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"}
-    ])
+# === AI Recommendations Placeholder ===
+st.subheader("AI Hiring Recommendations")
+st.markdown("✅ Candidate A is a strong match. Suggest interview.\n\n⚠️ Candidate B has skill gaps — recommend development plan.")
 
-    selected = st.multiselect("Compare Candidates", df["Candidate"].tolist(), default=df["Candidate"].tolist())
-    filtered = df[df["Candidate"].isin(selected)].copy()
-
-    filtered["QoH Score"] = (
-        filtered["JD Match"] * w_jd +
-        filtered["Reference"] * w_ref +
-        filtered["Behavior"] * w_beh +
-        filtered["Skill"] * w_skill
-    ) / total
-
-    st.subheader("📋 Candidate Comparison Table")
-    st.dataframe(filtered)
-
-    st.subheader("🎯 AI Recommendations")
-    for _, row in filtered.iterrows():
-        if row["QoH Score"] >= 90:
-            st.success(f"{row['Candidate']}: 🚀 Strong hire. Green light.")
-        elif row["Reference"] < 75:
-            st.warning(f"{row['Candidate']}: ⚠️ Weak reference. Needs follow-up.")
-        elif row["Skill"] < 80:
-            st.info(f"{row['Candidate']}: Needs support in **{row['Gaps']}**.")
-        else:
-            st.write(f"{row['Candidate']}: Ready for interviews.")
-
-# ------------------- Routing -------------------
-st.title("🚀 Welcome to GrowScore")
-portal = st.radio("Choose your portal:", ["👤 Candidate Portal", "🧑‍💼 Recruiter Portal"])
-if portal == "👤 Candidate Portal":
-    candidate_journey()
-else:
-    recruiter_dashboard()
-
+# === Footer ===
+st.caption("Built with ❤️ by Skippr. Human-centered hiring for a smarter future.")
