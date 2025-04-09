@@ -54,7 +54,7 @@ except FileNotFoundError:
 st.markdown("""
 <div style='text-align: center; margin-top: -10px;'>
     <h1 style='color: #0073e6;'>Welcome to Skippr</h1>
-    <p style='color: #0073e6; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
+    <p style='color: #0073e6; font-size: 18px;'>Helping you skip the noise and land faster.</p>
 </div>
 """, unsafe_allow_html=True)
     st.markdown("""
