@@ -1,3 +1,13 @@
+st.set_page_config(page_title="Skippr", layout="wide")
+
+
+# Apply custom CSS from assets
+try:
+    with open("assets/style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    st.warning("⚠️ Custom CSS not found. Using default styling.")
+
 
 import streamlit as st
 import os
