@@ -46,6 +46,7 @@ openai.api_key = OPENAI_KEY
 
 
 
+
 # Branding Header with logo
 try:
     st.image("assets/logo.png", width=200)  # Enlarged logo
@@ -58,6 +59,7 @@ st.markdown("""
     <p style='color: white; font-size: 18px;'>Helping you skip the noise and land faster.</p>
 </div>
 """, unsafe_allow_html=True)
+
 , unsafe_allow_html=True)
 , unsafe_allow_html=True)
 
