@@ -50,23 +50,7 @@ if "supabase_user" not in st.session_state:
 
 # Login UI
 st.info('🔐 Login temporarily disabled for MVP testing.')
-                    if auth_mode == "Login":
-        if st.button("🔓 Login"):
-            try:
-                result = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                st.session_state.supabase_session = result.session
-                st.session_state.supabase_user = result.user
-                st.success(f"✅ Logged in as {email}")
-            except Exception as e:
-                st.error(f"Login failed: {e}")
-    else:
-        if st.button("🆕 Register"):
-            try:
-                result = supabase.auth.sign_up({"email": email, "password": password})
-                st.success("✅ Account created. Check email for verification.")
-            except Exception as e:
-                st.error(f"Signup failed: {e}")
-
+                    
 if not st.session_state.supabase_session:
     st.warning("❌ No active session. Please log in.")
     st.stop()
