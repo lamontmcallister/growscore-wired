@@ -1,5 +1,3 @@
-# Full GrowScore platform with all modules and updated login UI
-
 
 import streamlit as st
 import os
@@ -12,7 +10,20 @@ import matplotlib.pyplot as plt
 from supabase import create_client, Client
 from datetime import datetime
 
-st.set_page_config(page_title="GrowScore", layout="wide")
+st.set_page_config(page_title="Skippr", layout="wide")
+
+# Inject custom CSS from local file
+with open(""assets/style.css"") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Branding Header
+st.image("assets/logo.png", width=120)
+st.markdown("""
+<div style='text-align: center; margin-top: -10px;'>
+    <h1 style='color: white;'>Welcome to Skippr</h1>
+    <p style='color: #CCCCCC; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Load secrets
 SUPABASE_URL = st.secrets["supabase"]["url"]
@@ -30,7 +41,7 @@ if "supabase_user" not in st.session_state:
 
 # Login UI
 with st.sidebar:
-    st.header("👤 Sign In / Register")
+    st.header("🧭 Candidate Login")
     auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
@@ -52,9 +63,11 @@ with st.sidebar:
                 st.error(f"Signup failed: {e}")
 
 if not st.session_state.supabase_session:
-    st.warning("❌ No active session. Please log in.")
+    st.info("🧭 Please sign in to continue.")
     st.stop()
-    
+
+# Your original script continues below...
+
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
                "Communication", "Strategic Planning", "Excel", "Machine Learning"]
 
