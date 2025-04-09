@@ -1,15 +1,7 @@
-[server]
-headless = true
-
-[python]
-version = "3.11"
-
-
 
 [theme]
-primaryColor = "#0047AB"
-backgroundColor = "#F9FAFB"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#111827"
-font = "sans serif"
-
+primaryColor="#0073e6"
+backgroundColor="#f9f9f9"
+secondaryBackgroundColor="#ffffff"
+textColor="#000000"
+font="sans serif"
