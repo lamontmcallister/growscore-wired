@@ -15,8 +15,8 @@ from datetime import datetime
 st.set_page_config(page_title="Skippr", layout="wide")
 
 st.markdown("""
-    <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Compass_icon_blue.svg/512px-Compass_icon_blue.svg.png">
-""", unsafe_allow_html=True)
+    st.markdown("""
+    """, unsafe_allow_html=True)
 
 
 
@@ -371,4 +371,3 @@ if portal == "👤 Candidate Portal":
     candidate_journey()
 else:
     recruiter_dashboard()
-
