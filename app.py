@@ -13,16 +13,6 @@ from supabase import create_client, Client
 from datetime import datetime
 
 st.set_page_config(page_title="Skippr", layout="wide")
-st.markdown("""
-<style>
-section[data-testid="stSidebar"] {
-    background-color: #003366 !important;
-}
-section[data-testid="stSidebar"] * {
-    color: white !important;
-}
-</style>
-""", unsafe_allow_html=True)
 
 
 # Apply custom CSS from assets
@@ -43,20 +33,23 @@ openai.api_key = OPENAI_KEY
 
 # Auth state
 
+# Branding Header with logo
+try:
+    st.image("assets/logo.png", width=120)
+except FileNotFoundError:
+    st.warning("⚠️ Logo not found — skipping logo display.")
 
-
-
-# Branding Header
-st.image("assets/logo.png", width=100)
 st.markdown("""
-    <div style='text-align: center; background-color: #003366; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-        <h1 style='color: #ffffff; font-size: 36px; margin-bottom: 0;'>Welcome to Skippr</h1>
-        <p style='color: #ffffff; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
-    </div>
+
+<div style='text-align: center; margin-top: -10px; background-color: #1e3a8a; padding: 10px; border-radius: 8px;'>
+    <h1 style='color: white;'>Welcome to Skippr</h1>
+    <p style='color: white; font-size: 18px;'>Helping you skip the noise and land faster.</p>
+</div>
+
+    <h1 style='color: white;'>Welcome to Skippr</h1>
+    <p style='color: #CCCCCC; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
+</div>
 """, unsafe_allow_html=True)
-
-
-
 
 
 if "supabase_session" not in st.session_state:
@@ -77,15 +70,6 @@ with st.sidebar:
                 st.session_state.supabase_session = result.session
                 st.session_state.supabase_user = result.user
                 st.success(f"✅ Logged in as {email}")
-
-    st.markdown("""
-        <style>
-        [data-testid="stSidebar"][aria-expanded="true"] {
-            display: none;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
             except Exception as e:
                 st.error(f"Login failed: {e}")
     else:
@@ -96,8 +80,13 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
+
+if st.session_state.supabase_session:
+    st.sidebar.empty()
+
+
 if not st.session_state.supabase_session:
-    st.warning("❌ No active session. Please log in.")
+    
     st.stop()
     
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
