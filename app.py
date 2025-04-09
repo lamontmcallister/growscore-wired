@@ -40,13 +40,8 @@ except FileNotFoundError:
     st.warning("⚠️ Logo not found — skipping logo display.")
 
 st.markdown("""
-
-<div style='text-align: center; margin-top: -10px; background-color: #1e3a8a; padding: 10px; border-radius: 8px;'>
-    <h1 style='color: white;'>Welcome to Skippr</h1>
-    <p style='color: white; font-size: 18px;'>Helping you skip the noise and land faster.</p>
-</div>
-
-    <h1 style='color: white;'>Welcome to Skippr</h1>
+<div style='text-align: center; margin-top: -10px;'>
+    <h1 style='color: #0066cc;'>Welcome to Skippr</h1>
     <p style='color: #CCCCCC; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
 </div>
 """, unsafe_allow_html=True)
@@ -59,7 +54,7 @@ if "supabase_user" not in st.session_state:
 
 # Login UI
 with st.sidebar:
-    st.header("🧭 Candidate Login")
+    st.markdown("<h3 style='color: white;'>🧭 Candidate Login</h3>", unsafe_allow_html=True)
     auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
@@ -80,13 +75,8 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
-
-if st.session_state.supabase_session:
-    st.sidebar.empty()
-
-
 if not st.session_state.supabase_session:
-    
+    st.warning("❌ No active session. Please log in.")
     st.stop()
     
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
@@ -337,7 +327,7 @@ def recruiter_dashboard():
     st.subheader("🎯 AI Recommendations")
     for _, row in filtered.iterrows():
         if row["QoH Score"] >= 90:
-            st.success(f"{row['Candidate']}: 🚀 Strong hire. Green light.")
+            st.success(f"{row['Candidate']}: Strong hire. Green light.")
         elif row["Reference"] < 75:
             st.warning(f"{row['Candidate']}: ⚠️ Weak reference. Needs follow-up.")
         elif row["Skill"] < 80:
@@ -346,7 +336,7 @@ def recruiter_dashboard():
             st.write(f"{row['Candidate']}: Ready for interviews.")
 
 # ------------------- Routing -------------------
-st.title("🚀 Welcome to GrowScore")
+st.title("Welcome to GrowScore")
 portal = st.radio("Choose your portal:", ["👤 Candidate Portal", "🧑‍💼 Recruiter Portal"])
 if portal == "👤 Candidate Portal":
     candidate_journey()
