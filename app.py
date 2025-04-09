@@ -33,11 +33,6 @@ openai.api_key = OPENAI_KEY
 
 # Auth state
 
-# Branding Header with logo
-try:
-    st.image("assets/logo.png", width=120)
-except FileNotFoundError:
-    st.warning("⚠️ Logo not found — skipping logo display.")
 
 st.markdown("""
 <div style='text-align: center; margin-top: -10px;'>
@@ -53,7 +48,8 @@ if "supabase_user" not in st.session_state:
     st.session_state.supabase_user = None
 
 # Login UI
-with st.sidebar:
+if not st.session_state.supabase_session:
+    with st.sidebar:
     st.markdown("<h3 style='color: white;'>🧭 Candidate Login</h3>", unsafe_allow_html=True)
     auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
     email = st.text_input("Email")
