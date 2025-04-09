@@ -50,7 +50,26 @@ if "supabase_user" not in st.session_state:
 # Login UI
 if not st.session_state.supabase_session:
     with st.sidebar:
-    st.markdown("<h3 style='color: white;'>🧭 Candidate Login</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color: white;'>🧭 Candidate Login</h3>", unsafe_allow_html=True)
+        auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        if auth_mode == "Login":
+            if st.button("🔓 Login"):
+                try:
+                    result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                    st.session_state.supabase_session = result.session
+                    st.session_state.supabase_user = result.user
+                    st.success(f"✅ Logged in as {email}")
+                except Exception as e:
+                    st.error(f"Login failed: {e}")
+        else:
+            if st.button("🆕 Register"):
+                try:
+                    result = supabase.auth.sign_up({"email": email, "password": password})
+                    st.success("✅ Account created. Check email for verification.")
+                except Exception as e:
+                    st.error(f"Signup failed: {e}")
     auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
