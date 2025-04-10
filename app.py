@@ -96,3 +96,106 @@ else:
         st.write("🚧 Recruiter Dashboard coming in next drop...")
     else:
         st.write("✅ Candidate Journey incoming next...")
+        # === Step 2: Job Description Input ===
+elif st.session_state.step == 2:
+    st.header("Step 2: Paste Job Description")
+
+    default_jd = "Looking for a data-savvy talent operations leader with SQL, reporting, and recruiting analytics expertise."
+
+    job_desc = st.text_area(
+        "Paste the job description:",
+        value=st.session_state.get("job_desc", default_jd if st.session_state.demo_mode else "")
+    )
+
+    if job_desc:
+        st.session_state.job_desc = job_desc
+        st.success("✅ Job description saved.")
+
+    # Navigation buttons
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("⬅️ Back"):
+            st.session_state.step -= 1
+            st.experimental_rerun()
+    with col2:
+        if st.button("Next ➡️"):
+            st.session_state.step += 1
+            st.experimental_rerun()
+# Skippr MVP Reboot — Part 3: JD Match Score
+
+# === Step 3: JD Match ===
+elif st.session_state.step == 3:
+    st.header("Step 3: Resume vs JD Match")
+
+    resume_text = st.session_state.get("resume_text", "")
+    job_desc = st.session_state.get("job_desc", "")
+
+    if resume_text and job_desc:
+        resume_words = set(resume_text.lower().split())
+        jd_words = set(job_desc.lower().split())
+        overlap = resume_words.intersection(jd_words)
+        match_score = len(overlap) / max(len(jd_words), 1) * 100
+
+        st.session_state.match_score = match_score
+        st.metric("Match Score", f"{match_score:.1f}%")
+
+        fig, ax = plt.subplots()
+        ax.pie([match_score, 100 - match_score], labels=["Match", "Gap"], autopct='%1.1f%%', startangle=90)
+        ax.axis("equal")
+        st.pyplot(fig)
+
+    else:
+        st.warning("❗ Resume or Job Description missing. Go back to Step 1 or 2.")
+
+    # Navigation
+    col1, col2 = st.columns([1,1])
+    with col1:
+        if st.button("⬅️ Back"):
+            st.session_state.step -= 1
+            st.experimental_rerun()
+    with col2:
+        if st.button("Next ➡️"):
+            st.session_state.step += 1
+            st.experimental_rerun()
+# Skippr MVP Reboot — Part 4: Skill Selection
+
+# === Step 4: Skills ===
+elif st.session_state.step == 4:
+    st.header("Step 4: Select Your Skills")
+
+    skill_options = [
+        "Python", "SQL", "Excel", "Project Management",
+        "Recruiting Analytics", "Leadership", "Data Visualization",
+        "ATS Systems", "People Operations", "Communication"
+    ]
+
+    default_skills = skill_options[:4] if st.session_state.demo_mode else []
+
+    selected_skills = st.multiselect(
+        "Choose the skills you’re strongest in:",
+        skill_options,
+        default=st.session_state.get("skills_selected", default_skills)
+    )
+
+    st.session_state.skills_selected = selected_skills
+
+    if selected_skills:
+        st.success(f"✅ {len(selected_skills)} skills selected.")
+
+    # Optional freeform skill input
+    other = st.text_input("Any other skills you'd like to include?")
+    if other:
+        st.session_state.skills_selected.append(other)
+        st.success("✅ Added to your skills list.")
+
+    # Navigation
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("⬅️ Back"):
+            st.session_state.step -= 1
+            st.experimental_rerun()
+    with col2:
+        if st.button("Next ➡️"):
+            st.session_state.step += 1
+            st.experimental_rerun()
+
