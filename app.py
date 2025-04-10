@@ -1,4 +1,4 @@
-# Skippr MVP Reboot — Part 1: Fullscreen Login + Clean Routing
+# Skippr MVP Reboot — Part 1: Fullscreen Login + Clean Routing (Polished UI)
 
 import streamlit as st
 import os
@@ -43,31 +43,36 @@ def show_login():
     st.markdown("""
     <div style='text-align: center; padding: 2rem;'>
         <h1>Welcome to Skippr</h1>
-        <p>Login or create an account to begin your personalized candidate journey.</p>
+        <p>Let’s get you inside — your growth journey starts here.</p>
     </div>
     """, unsafe_allow_html=True)
 
     auth_mode = st.radio("Action", ["Login", "Sign Up"], horizontal=True)
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
 
-    if auth_mode == "Login":
-        if st.button("🔓 Login"):
-            try:
-                result = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                st.session_state.supabase_session = result.session
-                st.session_state.supabase_user = result.user
-                st.session_state.current_page = "candidate"
-                st.experimental_rerun()
-            except Exception as e:
-                st.error(f"Login failed: {e}")
-    else:
-        if st.button("🆕 Create Account"):
-            try:
-                result = supabase.auth.sign_up({"email": email, "password": password})
-                st.success("✅ Account created. Check your inbox to verify.")
-            except Exception as e:
-                st.error(f"Signup failed: {e}")
+    st.markdown("#### No resume? No problem — you’ll upload it next.")
+    email = st.text_input("Email", placeholder="e.g. you@skippr.ai", key="email_input")
+    password = st.text_input("Password", type="password", placeholder="•••••••• (make it a good one)", key="pass_input")
+
+    col1, col2, _ = st.columns([1,1,2])
+    with col1:
+        if auth_mode == "Login":
+            if st.button("🔓 Login"):
+                try:
+                    result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                    st.session_state.supabase_session = result.session
+                    st.session_state.supabase_user = result.user
+                    st.session_state.current_page = "candidate"
+                    st.experimental_rerun()
+                except Exception as e:
+                    st.error(f"Login failed: {e}")
+    with col2:
+        if auth_mode == "Sign Up":
+            if st.button("🆕 Create Account"):
+                try:
+                    result = supabase.auth.sign_up({"email": email, "password": password})
+                    st.success("✅ Account created. Check your inbox to verify.")
+                except Exception as e:
+                    st.error(f"Signup failed: {e}")
 
 # === Sidebar when logged in ===
 def sidebar_logged_in():
