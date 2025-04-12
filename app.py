@@ -102,6 +102,7 @@ def candidate_journey():
         st.subheader("Step 1: Upload Resume")
         file = st.file_uploader("Upload PDF", type="pdf")
         text = "SQL, Recruiting, Excel, Leadership" if st.session_state.demo_mode else ""
+        if file:
             with pdfplumber.open(file) as pdf:
         text = "SQL, Recruiting, Excel, Leadership" if st.session_state.demo_mode else ""
             text = "\n".join([page.extract_text() for page in pdf.pages])
