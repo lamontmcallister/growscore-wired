@@ -105,7 +105,7 @@ def candidate_journey():
         if file:
             with pdfplumber.open(file) as pdf:
         text = "SQL, Recruiting, Excel, Leadership" if st.session_state.demo_mode else ""
-".join([page.extract_text() for page in pdf.pages])
+            text = "\n".join([page.extract_text() for page in pdf.pages])
         st.session_state.resume_text = text
         st.text_area("Resume Text", text)
 
