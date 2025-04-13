@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from supabase import create_client, Client
+
 from datetime import datetime
 
 st.set_page_config(page_title="Skippr", layout="wide")
