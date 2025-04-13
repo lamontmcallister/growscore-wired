@@ -76,7 +76,7 @@ with st.sidebar:
                 st.error(f"Signup failed: {e}")
 
 if not st.session_state.supabase_session:
-    st.warning("❌ No active session. Please log in.")
+    st.warning("No active session. Please log in.")
     st.stop()
     
 skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
