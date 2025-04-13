@@ -98,7 +98,7 @@ if not st.session_state.show_app:
     ]
 
     current_slide = st.session_state.carousel_index
-    st.markdown(f""<div style='text-align: center; font-size: 18px; color: #333; margin-top: 3rem;'><p>{carousel_slides[current_slide]}</p></div>"", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: center; font-size: 18px; color: #333; margin-top: 3rem;'><p>{carousel_slides[current_slide]}</p></div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1,2,1])
     with col1:
@@ -116,9 +116,7 @@ if not st.session_state.show_app:
 
 
 # Login UI
-with st.sidebar:
-    if st.session_state.supabase_user:
-        st.write(f"Welcome, {st.session_state.supabase_user['email']}")
+with st.sidebar:n")
     auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
