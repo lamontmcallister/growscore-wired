@@ -4,7 +4,6 @@
 import streamlit as st
 import os
 import openai
-
 import ast
 import pdfplumber
 import pandas as pd
@@ -117,7 +116,9 @@ if not st.session_state.show_app:
 
 
 # Login UI
-with st.sidebar:n")
+with st.sidebar:
+    if st.session_state.supabase_user:
+        st.write(f"Welcome, {st.session_state.supabase_user['email']}")
     auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
