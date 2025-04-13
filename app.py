@@ -53,6 +53,31 @@ if "supabase_session" not in st.session_state:
 if "supabase_user" not in st.session_state:
     st.session_state.supabase_user = None
 
+
+# --- Homepage vs. App Logic ---
+if "show_app" not in st.session_state:
+    st.session_state.show_app = False
+
+if not st.session_state.show_app:
+    st.markdown("""
+        <div style='text-align: center; margin-top: -20px;'>
+            <h1 style='color: #1A1A1A;'>Welcome to Skippr</h1>
+            <p style='color: #555; font-size: 18px; max-width: 600px; margin: auto;'>
+                Predict your future job success, skip the hiring noise, and get seen for your potential — not just your past.
+            </p>
+            <p style='margin-top: 2rem;'>
+                <button onclick="document.getElementById('get-started-btn').click()">🚀 Get Started</button>
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Invisible button to trigger app start
+    if st.button("🚀 Get Started", key="get-started-btn"):
+        st.session_state.show_app = True
+
+    st.stop()
+
+
 # Login UI
 with st.sidebar:
     st.header("🧭 Candidate Login")
