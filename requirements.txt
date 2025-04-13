@@ -5,3 +5,4 @@ tiktoken
 python-dotenv
 pdfplumber
 matplotlib
+scikit-learn
