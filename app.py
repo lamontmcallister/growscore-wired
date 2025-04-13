@@ -1,4 +1,4 @@
-\# Full GrowScore platform with all modules and updated login UI
+# Full GrowScore platform with all modules and updated login UI
 
 
 import streamlit as st
