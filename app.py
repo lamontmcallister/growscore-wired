@@ -189,8 +189,7 @@ def show_recruiter():
     st.slider("Skills", 0, 100, 25)
     st.slider("References", 0, 100, 25)
     st.slider("Education", 0, 100, 25)
-    st.markdown("✅ Candidate A looks strong.
-⚠️ Candidate B needs coaching.")
+    st.markdown("✅ Candidate A looks strong.\n⚠️ Candidate B needs coaching.")
 
 # Main Routing
 if not st.session_state.supabase_session:
