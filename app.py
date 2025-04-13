@@ -1,5 +1,5 @@
-# Skippr — Full Platform: Login + Candidate Journey + Recruiter Dashboard (Polished One-File Build)
-# Author: Skippr Team | Built for Demo Perfection
+# Skippr — FULL FIXED VERSION (Login + Candidate Journey + Recruiter Dashboard)
+# Streamlit 1.44+ Compatible | Replaces deprecated methods + adds session state safety
 
 import streamlit as st
 import os
@@ -29,18 +29,18 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = st.secrets["openai"]["key"]
 
 # === Session Setup ===
-if "supabase_user" not in st.session_state:
-    st.session_state.supabase_user = None
-if "supabase_session" not in st.session_state:
-    st.session_state.supabase_session = None
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "login"
-if "step" not in st.session_state:
-    st.session_state.step = 1
-if "demo_mode" not in st.session_state:
-    st.session_state.demo_mode = False
-if "recruiter_mode" not in st.session_state:
-    st.session_state.recruiter_mode = False
+init_keys = ["supabase_user", "supabase_session", "current_page", "step", "demo_mode", "recruiter_mode",
+             "resume_text", "job_desc", "skills", "match_score"]
+for key in init_keys:
+    if key not in st.session_state:
+        if key == "step":
+            st.session_state[key] = 1
+        elif key == "skills":
+            st.session_state[key] = []
+        elif key == "match_score":
+            st.session_state[key] = 0
+        else:
+            st.session_state[key] = None
 
 # === Auth View ===
 def show_login():
@@ -61,7 +61,7 @@ def show_login():
                 result = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state.supabase_user = result.user
                 st.session_state.supabase_session = result.session
-                st.experimental_rerun()
+                st.rerun()
             except Exception as e:
                 st.error("Login failed")
     else:
@@ -78,10 +78,10 @@ def sidebar_logged_in():
         st.markdown(f"**Logged in as:** `{st.session_state.supabase_user.email}`")
         if st.button("Logout"):
             supabase.auth.sign_out()
-            st.session_state.supabase_user = None
-            st.session_state.supabase_session = None
+            for key in init_keys:
+                st.session_state[key] = None
             st.session_state.step = 1
-            st.experimental_rerun()
+            st.rerun()
         st.checkbox("Recruiter View", key="recruiter_mode")
         st.checkbox("Demo Mode", key="demo_mode")
 
@@ -89,8 +89,8 @@ def sidebar_logged_in():
 def candidate_step_1():
     st.subheader("Step 1: Upload Resume")
     file = st.file_uploader("Upload Resume PDF", type="pdf")
-    resume_text = ""
     if file or st.session_state.demo_mode:
+        resume_text = ""
         if st.session_state.demo_mode:
             resume_text = "Experienced leader in recruiting ops, analytics, and systems."
         else:
@@ -102,7 +102,7 @@ def candidate_step_1():
         st.success("✅ Resume loaded.")
     if st.button("Next"):
         st.session_state.step += 1
-        st.experimental_rerun()
+        st.rerun()
 
 def candidate_step_2():
     st.subheader("Step 2: Paste Job Description")
@@ -110,10 +110,10 @@ def candidate_step_2():
     st.session_state.job_desc = jd
     if st.button("Next"):
         st.session_state.step += 1
-        st.experimental_rerun()
+        st.rerun()
     if st.button("Back"):
         st.session_state.step -= 1
-        st.experimental_rerun()
+        st.rerun()
 
 def candidate_step_3():
     st.subheader("Step 3: JD Match Score")
@@ -128,10 +128,10 @@ def candidate_step_3():
     st.pyplot(fig)
     if st.button("Next"):
         st.session_state.step += 1
-        st.experimental_rerun()
+        st.rerun()
     if st.button("Back"):
         st.session_state.step -= 1
-        st.experimental_rerun()
+        st.rerun()
 
 def candidate_step_4():
     st.subheader("Step 4: Skills Assessment")
@@ -140,10 +140,10 @@ def candidate_step_4():
     st.session_state.skills = selected
     if st.button("Next"):
         st.session_state.step += 1
-        st.experimental_rerun()
+        st.rerun()
     if st.button("Back"):
         st.session_state.step -= 1
-        st.experimental_rerun()
+        st.rerun()
 
 def candidate_step_5():
     st.subheader("Step 5: References & Backchannel")
@@ -153,10 +153,10 @@ def candidate_step_5():
     st.info("🚧 Reference verification in progress — demo only.")
     if st.button("Next"):
         st.session_state.step += 1
-        st.experimental_rerun()
+        st.rerun()
     if st.button("Back"):
         st.session_state.step -= 1
-        st.experimental_rerun()
+        st.rerun()
 
 def candidate_step_6():
     st.subheader("Step 6: Education + HR Check")
@@ -165,10 +165,10 @@ def candidate_step_6():
     st.info("🚧 HR performance verification coming soon")
     if st.button("Next"):
         st.session_state.step += 1
-        st.experimental_rerun()
+        st.rerun()
     if st.button("Back"):
         st.session_state.step -= 1
-        st.experimental_rerun()
+        st.rerun()
 
 def candidate_step_7():
     st.subheader("Step 7: Quality of Hire Summary")
@@ -182,7 +182,7 @@ def candidate_step_7():
     st.success("🎉 Candidate Journey Complete!")
     if st.button("Back"):
         st.session_state.step -= 1
-        st.experimental_rerun()
+        st.rerun()
 
 # === Recruiter Dashboard ===
 def recruiter_dashboard():
