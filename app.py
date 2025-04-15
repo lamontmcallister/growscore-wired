@@ -171,7 +171,10 @@ if not st.session_state.show_app:
 # --- Sidebar (if logged in) ---
 with st.sidebar:
     if st.session_state.supabase_user:
-        st.write(f"Welcome, {st.session_state.supabase_user['email']}")
+        if st.session_state.supabase_user and isinstance(st.session_state.supabase_user, dict) and 'email' in st.session_state.supabase_user:
+    st.write(f"Welcome, {st.session_state.supabase_user['email']}")
+else:
+    st.write("Welcome to Skippr!")
 
 
 def render_full_app():
