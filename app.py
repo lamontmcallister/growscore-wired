@@ -28,51 +28,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
 # Session auth state
-
-# Injected Sidebar Login + Toggle
-
-if "view_mode" not in st.session_state:
-    st.session_state.view_mode = "Candidate"
-
-with st.sidebar:
-    st.header("👤 Welcome to Skippr")
-    auth_mode = st.radio("Login or Sign Up", ["Login", "Sign Up"])
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-
-    if auth_mode == "Login" and st.button("Login"):
-        try:
-            user = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            st.session_state.supabase_session = user.session
-            st.session_state.supabase_user = user.user
-            st.success("✅ Logged in successfully!")
-        except Exception as e:
-            st.error(f"Login failed: {e}")
-
-    elif auth_mode == "Sign Up" and st.button("Sign Up"):
-        try:
-            user = supabase.auth.sign_up({"email": email, "password": password})
-            st.success("✅ Account created. Please check your email.")
-        except Exception as e:
-            st.error(f"Sign up failed: {e}")
-
-    if st.session_state.supabase_user:
-        try:
-            email_display = st.session_state.supabase_user.email
-        except AttributeError:
-            email_display = st.session_state.supabase_user["email"]
-        st.markdown(f"Logged in as: `{email_display}`")
-        if st.button("Logout"):
-            st.session_state.supabase_session = None
-            st.session_state.supabase_user = None
-            st.success("🔒 Logged out")
-
-# Top-right view toggle
-st.markdown("<div style='position: fixed; top: 10px; right: 20px; z-index: 999;'>", unsafe_allow_html=True)
-mode = st.radio("Mode", ["Candidate", "Recruiter"], horizontal=True, key="mode_toggle")
-st.session_state.view_mode = mode
-st.markdown("</div>", unsafe_allow_html=True)
-
 if "supabase_session" not in st.session_state:
     st.session_state.supabase_session = None
 if "supabase_user" not in st.session_state:
