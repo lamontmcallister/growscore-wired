@@ -1,7 +1,7 @@
+import streamlit as st
 st.set_page_config(page_title="Skippr", layout="wide")
 
 # Skippr App – One-Page Login Sidebar Integration
-import streamlit as st
 import os
 import openai
 import ast
@@ -77,7 +77,6 @@ if st.session_state.show_app:
 
 
 # Skippr App – Cleaned Homepage, Carousel, and Auth Logic
-import streamlit as st
 import os
 import openai
 import ast
@@ -88,7 +87,6 @@ import matplotlib.pyplot as plt
 from supabase import create_client, Client
 from datetime import datetime
 
-st.set_page_config(page_title="Skippr", layout="wide")
 
 # Apply custom CSS if present
 try:
