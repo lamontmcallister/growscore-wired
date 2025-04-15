@@ -1,4 +1,5 @@
-# Skippr App – Sidebar Login with Centered Landing Page
+
+# Skippr App – Sidebar Login with Centered Landing Page + Full Platform
 import streamlit as st
 import os
 import openai
@@ -32,6 +33,8 @@ if "supabase_session" not in st.session_state:
     st.session_state.supabase_session = None
 if "supabase_user" not in st.session_state:
     st.session_state.supabase_user = None
+if "view_mode" not in st.session_state:
+    st.session_state.view_mode = "Candidate"
 
 # Sidebar login/signup
 with st.sidebar:
@@ -39,7 +42,7 @@ with st.sidebar:
     auth_mode = st.radio("Login or Sign Up", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
-    
+
     if auth_mode == "Login" and st.button("Login"):
         try:
             user = supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -57,13 +60,23 @@ with st.sidebar:
             st.error(f"Sign up failed: {e}")
 
     if st.session_state.supabase_user:
-        st.markdown(f"Logged in as: `{st.session_state.supabase_user['email']}`")
+        try:
+            email_display = st.session_state.supabase_user.email
+        except AttributeError:
+            email_display = st.session_state.supabase_user["email"]
+        st.markdown(f"Logged in as: `{email_display}`")
         if st.button("Logout"):
             st.session_state.supabase_session = None
             st.session_state.supabase_user = None
             st.success("🔒 Logged out")
 
-# Main area (center)
+# Recruiter/Candidate toggle
+st.markdown("<div style='position: fixed; top: 10px; right: 20px;'>", unsafe_allow_html=True)
+mode = st.radio("Mode", ["Candidate", "Recruiter"], horizontal=True, key="mode_toggle")
+st.session_state.view_mode = mode
+st.markdown("</div>", unsafe_allow_html=True)
+
+# Main center panel
 if not st.session_state.supabase_user:
     st.title("🚀 Welcome to Skippr")
     st.subheader("Predictive Hiring, Verified Potential")
@@ -76,14 +89,36 @@ if not st.session_state.supabase_user:
     """)
     st.image("https://images.unsplash.com/photo-1519389950473-47ba0277781c", use_column_width=True)
 else:
-    st.success("🎉 You are logged in! Proceed to the Candidate Journey")
-    st.write("[Insert Candidate Journey modules here – resume upload, profile, JD match, etc.]")
+    if st.session_state.view_mode == "Candidate":
+        st.header("🎯 Candidate Journey")
+        st.subheader("Step 1: Upload Your Resume")
+        st.file_uploader("Upload resume as PDF", type=["pdf"])
+        st.subheader("Step 2: Add Education")
+        st.text_input("School Name")
+        st.text_input("Degree")
+        st.text_input("Graduation Year")
+        st.subheader("Step 3: Enter References")
+        st.text_input("Reference Name")
+        st.text_input("Reference Email")
+        st.subheader("Step 4: Match to Job Descriptions")
+        st.text_area("Paste job description")
+        st.button("Analyze Fit")
+        st.subheader("Final Step: Review Your Quality of Hire Score")
+        st.metric("Quality of Hire", "82", delta="+12")
+    else:
+        st.header("📊 Recruiter Dashboard")
+        st.subheader("Candidate Comparison Table")
+        st.dataframe(pd.DataFrame({
+            "Candidate": ["Jordan", "Alex", "Taylor"],
+            "QoH Score": [82, 76, 90],
+            "Match %": [88, 80, 95],
+            "Reference Score": [5, 4, 5]
+        }))
 
-# Optional top-right recruiter toggle
-with st.container():
-    st.markdown("""
-        <style>
-        .css-1q7gj4v.egzxvld1 { justify-content: flex-end; }
-        </style>
-    """, unsafe_allow_html=True)
-    st.markdown("<div style='position: fixed; top: 10px; right: 20px;'>👔 Recruiter View (Coming Soon)</div>", unsafe_allow_html=True)
+        st.subheader("Adjust QoH Weights")
+        st.slider("Resume Match Weight", 0, 100, 40)
+        st.slider("Reference Score Weight", 0, 100, 30)
+        st.slider("Education Score Weight", 0, 100, 30)
+
+        st.subheader("📌 AI Recommendations")
+        st.success("Jordan is a strong fit based on role alignment and references.")
