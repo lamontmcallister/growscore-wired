@@ -74,7 +74,6 @@ elif st.session_state.page == "auth":
     show_auth()
     st.stop()
 elif st.session_state.page == "candidate":
-    if not st.session_state.show_app:
         st.markdown('''
             <div style='text-align: center; padding-top: 4rem;'>
                 <h1 style='color: #1A1A1A; font-size: 3rem;'>Skippr</h1>
@@ -123,7 +122,6 @@ elif st.session_state.page == "candidate":
                 st.session_state.carousel_index += 1
     
         if st.button("🚀 Get Started", key="start-btn"):
-            st.session_state.show_app = True
     
         st.stop()
     
