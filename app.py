@@ -19,7 +19,6 @@ OPENAI_KEY = st.secrets['openai']['key']
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# Supabase session state
 if "supabase_session" not in st.session_state:
     st.session_state.supabase_session = None
 if "supabase_user" not in st.session_state:
@@ -29,32 +28,53 @@ if "show_app" not in st.session_state:
 if "is_signup" not in st.session_state:
     st.session_state.is_signup = False
 
-# Authentication handler
+def handle_auth(email, password):
+
+    st.session_state.is_signup = False
 def handle_auth(email, password):
     try:
         if st.session_state.is_signup:
             result = supabase.auth.sign_up({"email": email, "password": password})
         else:
             result = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        if result and result.user:
-            st.session_state.supabase_user = result.user
-            st.session_state.supabase_session = result.session
+        session = result.session
+        user = result.user
+        if session and user:
+            st.session_state.supabase_session = session
+            st.session_state.supabase_user = user
             st.session_state.show_app = True
         else:
-            st.error("Authentication failed.")
+            st.error("Login failed. Check credentials or try signing up.")
     except Exception as e:
         st.error(f"Auth error: {e}")
 
-# Login UI
 if not st.session_state.show_app:
-    st.sidebar.title("🔐 Welcome to Skippr")
-    st.sidebar.write("Log in or sign up to get started.")
-    email = st.sidebar.text_input("Email")
-    password = st.sidebar.text_input("Password", type="password")
-    st.session_state.is_signup = st.sidebar.checkbox("New user? Sign up")
-    if st.sidebar.button("Continue"):
-        handle_auth(email, password)
-    st.stop()
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.markdown("### 👋 Welcome to Skippr")
+        st.write("Sign in to start your Candidate Journey.")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        auth_button = st.button("Sign Up" if st.session_state.is_signup else "Log In")
+        toggle_text = "Have an account? Log In" if st.session_state.is_signup else "New here? Create account"
+        if st.button(toggle_text):
+            st.session_state.is_signup = not st.session_state.is_signup
+        if auth_button:
+            handle_auth(email, password)
+    with col2:
+        st.markdown("## 🚀 Skippr: Verified Potential, Not Just Resumes")
+        st.markdown("""
+- ✅ AI-powered Quality of Hire scoring  
+- 📄 Resume + JD match analysis  
+- 💬 Behavior & reference verification  
+- 📊 Recruiter dashboard with signal-based comparison  
+        """)
+        st.image("https://images.unsplash.com/photo-1519389950473-47ba0277781c", use_column_width=True)
+
+# --- MAIN APP BELOW ---
+if st.session_state.show_app:
+    # Placeholder for rest of your app code – Candidate Journey, Recruiter Dashboard, etc.
+    st.success("🎉 Logged in successfully! Load the Candidate Journey here.")
 
 # Skippr App – Cleaned Homepage, Carousel, and Auth Logic
 import streamlit as st
@@ -130,10 +150,6 @@ if "show_app" not in st.session_state:
     st.stop()
 
 # --- Sidebar (if logged in) ---
-with st.sidebar:
-    if st.session_state.supabase_user:
-        st.write(f"Welcome, {st.session_state.supabase_user['email']}")
-
 
 def render_full_app():
     
@@ -176,28 +192,6 @@ def render_full_app():
         st.session_state.supabase_user = None
     
     # Login UI
-    with st.sidebar:
-        st.header("🧭 Candidate Login")
-        auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        if auth_mode == "Login":
-            if st.button("🔓 Login"):
-                try:
-                    result = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                    st.session_state.supabase_session = result.session
-                    st.session_state.supabase_user = result.user
-                    st.success(f"✅ Logged in as {email}")
-                except Exception as e:
-                    st.error(f"Login failed: {e}")
-        else:
-            if st.button("🆕 Register"):
-                try:
-                    result = supabase.auth.sign_up({"email": email, "password": password})
-                    st.success("✅ Account created. Check email for verification.")
-                except Exception as e:
-                    st.error(f"Signup failed: {e}")
-    
     if not st.session_state.supabase_session:
         st.warning("❌ No active session. Please log in.")
         st.stop()
@@ -414,12 +408,6 @@ def render_full_app():
     # ------------------- Recruiter Dashboard -------------------
     def recruiter_dashboard():
         st.title("Recruiter Dashboard")
-        with st.sidebar.expander(" QoH Weight Sliders", expanded=True):
-            w_jd = st.slider("JD Match", 0, 100, 25)
-            w_ref = st.slider("References", 0, 100, 25)
-            w_beh = st.slider("Behavior", 0, 100, 25)
-            w_skill = st.slider("Skills", 0, 100, 25)
-    
         total = w_jd + w_ref + w_beh + w_skill
         if total == 0:
             st.warning("Adjust sliders to view scores.")
