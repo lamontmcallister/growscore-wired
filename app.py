@@ -434,12 +434,17 @@ def render_full_app():
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
+
 if st.session_state.page == "home":
-    st.title("Welcome to Skippr 🚀")
+    st.markdown("## Welcome to Skippr 🚀", unsafe_allow_html=True)
     st.markdown("### Predictive, verified, human-centered hiring — powered by AI.")
     st.markdown("Skippr helps candidates showcase their true potential, and helps recruiters focus on what matters.")
-    if st.button("🚀 Get Started"):
-        st.session_state.page = "app"
+    st.markdown("###", unsafe_allow_html=True)
+    st.markdown(" ", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if st.button("🚀 Get Started", use_container_width=True):
+            st.session_state.page = "app"
 
 elif st.session_state.page == "app":
     render_full_app()
