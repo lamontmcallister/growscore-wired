@@ -1,3 +1,4 @@
+st.set_page_config(page_title="Skippr", layout="wide")
 
 # Skippr App – One-Page Login Sidebar Integration
 import streamlit as st
@@ -11,7 +12,6 @@ import matplotlib.pyplot as plt
 from supabase import create_client, Client
 from datetime import datetime
 
-st.set_page_config(page_title="Skippr", layout="wide")
 
 # Load secrets
 SUPABASE_URL = st.secrets["supabase"]["url"]
