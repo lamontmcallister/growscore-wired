@@ -10,6 +10,54 @@ import matplotlib.pyplot as plt
 from supabase import create_client, Client
 from datetime import datetime
 
+
+# --- Default CSS fallback ---
+default_style = """
+<style>
+body { font-family: 'Segoe UI', sans-serif; background-color: #fafafa; }
+h1, h3 { color: #1A1A1A; }
+</style>
+"""
+st.markdown(default_style, unsafe_allow_html=True)
+
+# --- Dev Mode Toggle ---
+if "dev_mode" not in st.session_state:
+    st.session_state.dev_mode = False
+st.session_state.dev_mode = st.sidebar.checkbox("🔧 Dev Mode", value=st.session_state.dev_mode)
+if st.session_state.dev_mode:
+    st.sidebar.write("Session State:")
+    st.sidebar.json(st.session_state)
+
+# --- Routing Setup ---
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+def show_homepage():
+    st.markdown("""
+        <div style='text-align: center; padding-top: 4rem;'>
+            <h1 style='font-size: 3rem;'>Skippr</h1>
+            <h3>Predictive Hiring Starts Here</h3>
+            <p style='font-size: 18px; max-width: 650px; margin: 2rem auto;'>
+                Skippr empowers candidates to showcase verified potential — and helps recruiters find high performers faster. 
+                Powered by AI. Centered on human growth.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button("🚀 Get Started"):
+        st.session_state.page = "candidate_journey"
+
+def show_candidate_journey():
+    st.subheader("🚧 Candidate Journey Under Construction")
+    st.info("This is where the full journey experience will live!")
+
+# --- Router Logic ---
+if st.session_state.page == "home":
+    show_homepage()
+elif st.session_state.page == "candidate_journey":
+    show_candidate_journey()
+
+
+# --- Original Script Continues ---
 st.set_page_config(page_title="Skippr", layout="wide")
 
 # Apply custom CSS if present
