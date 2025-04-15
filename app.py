@@ -74,3 +74,7 @@ if not st.session_state.show_app:
 if st.session_state.show_app:
     # Placeholder for rest of your app code – Candidate Journey, Recruiter Dashboard, etc.
     st.success("🎉 Logged in successfully! Load the Candidate Journey here.")
+
+
+# --- FULL WIRED APP LOGIC BELOW ---
+
