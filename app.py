@@ -162,7 +162,7 @@ def render_full_app():
                     st.error(f"Signup failed: {e}")
     
     if not st.session_state.supabase_session:
-        st.warning("❌ No active session. Please log in.")
+        
         st.stop()
         
     skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
@@ -438,7 +438,7 @@ if st.session_state.page == "home":
     
     st.markdown("### Predictive, verified, human-centered hiring — powered by AI.")
     st.markdown("Skippr helps candidates showcase their true potential, and helps recruiters focus on what matters.")
-    if st.button("🚀 Get Started"):
+    if :
         st.session_state.page = "app"
 
 elif st.session_state.page == "app":
