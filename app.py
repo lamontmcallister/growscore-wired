@@ -19,6 +19,26 @@ OPENAI_KEY = st.secrets['openai']['key']
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
+# Login/Signup logic
+# Login UI
+if not st.session_state.show_app:
+# Skippr App – Cleaned Homepage, Carousel, and Auth Logic
+import streamlit as st
+import os
+import openai
+import ast
+import pdfplumber
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from supabase import create_client, Client
+from datetime import datetime
+
+st.set_page_config(page_title="Skippr", layout="wide")
+
+# Apply custom CSS if present
+try:
+
 # Session state setup
 if "supabase_session" not in st.session_state:
     st.session_state.supabase_session = None
@@ -57,22 +77,6 @@ if not st.session_state.show_app:
             handle_auth(email, password)
     st.stop()
 
-# Skippr App – Cleaned Homepage, Carousel, and Auth Logic
-import streamlit as st
-import os
-import openai
-import ast
-import pdfplumber
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from supabase import create_client, Client
-from datetime import datetime
-
-st.set_page_config(page_title="Skippr", layout="wide")
-
-# Apply custom CSS if present
-try:
     with open("assets/style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
