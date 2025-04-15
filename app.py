@@ -1,4 +1,4 @@
-# Skippr App – Cleaned Homepage, Carousel, and Auth Logic
+
 import streamlit as st
 import os
 import openai
@@ -12,13 +12,6 @@ from datetime import datetime
 
 st.set_page_config(page_title="Skippr", layout="wide")
 
-# Apply custom CSS if present
-try:
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-except FileNotFoundError:
-    st.warning("⚠️ Custom CSS not found. Using default styling.")
-
 # Load secrets
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -27,20 +20,13 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# Session auth state
-if "supabase_session" not in st.session_state:
-    st.session_state.supabase_session = None
-if "supabase_user" not in st.session_state:
-    st.session_state.supabase_user = None
-
-
-
-# --- AUTH LANDING + LOGIN ---
+# Session State
 if "page" not in st.session_state:
     st.session_state.page = "landing"
 if "user" not in st.session_state:
     st.session_state.user = None
 
+# Landing Page
 def show_landing():
     st.markdown("""
         <div style='text-align: center; padding-top: 4rem;'>
@@ -56,6 +42,7 @@ def show_landing():
     if st.button("🚀 Get Started"):
         st.session_state.page = "auth"
 
+# Login Page
 def show_auth():
     st.markdown("### 👋 Welcome to Skippr")
     action = st.radio("Choose Action", ["Login", "Sign Up"], key="auth_mode")
@@ -79,17 +66,15 @@ def show_auth():
             except Exception as e:
                 st.error("Account creation failed.")
 
-# Route: Landing → Login → Candidate Journey (full app starts here)
+# ROUTING: Landing → Auth → Candidate Journey
 if st.session_state.page == "landing":
     show_landing()
     st.stop()
 elif st.session_state.page == "auth":
     show_auth()
     st.stop()
-
-
-# --- Candidate Journey Starts Here ---
-
+elif st.session_state.page == "candidate":
+if not st.session_state.show_app:
     st.markdown('''
         <div style='text-align: center; padding-top: 4rem;'>
             <h1 style='color: #1A1A1A; font-size: 3rem;'>Skippr</h1>
@@ -493,3 +478,4 @@ if st.session_state.page == "home":
 
 elif st.session_state.page == "app":
     render_full_app()
+
