@@ -4,7 +4,6 @@ st.set_page_config(page_title="Skippr", layout="wide")
 # Skippr App – One-Page Login Sidebar Integration
 import os
 import openai
-
 import ast
 import pdfplumber
 import pandas as pd
