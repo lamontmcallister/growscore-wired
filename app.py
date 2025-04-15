@@ -116,7 +116,7 @@ def render_full_app():
     def extract_skills_from_resume(text):
         prompt = f"Extract 5–10 professional skills from this resume:
         {text}
-        Return as a Python list."""
+        prompt = f"""Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."""
             res = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
