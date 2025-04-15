@@ -146,7 +146,7 @@ def generate_growth_recs():
         ]
         # ------------------- Candidate Journey -------------------
 def candidate_journey():
-    st.title("🌱 Candidate Journey")
+    st.title(" Candidate Journey")
     step = st.session_state.get("step", 0)
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
@@ -183,7 +183,7 @@ def candidate_journey():
         st.button("Next", on_click=next_step)
 
     elif step == 1:
-        st.subheader("🎯 Step 2: Select Your Top Skills")
+        st.subheader(" Step 2: Select Your Top Skills")
         st.markdown("Review and adjust the top skills extracted from your resume.")
         selected = st.multiselect("Top Skills:", skills_pool, default=st.session_state.get("resume_skills", []))
         st.session_state.selected_skills = selected
@@ -238,7 +238,7 @@ def candidate_journey():
         st.button("Next", on_click=next_step)
 
     elif step == 6:
-        st.subheader("🔐 Step 7: HR Performance Checkpoint")
+        st.subheader(" Step 7: HR Performance Checkpoint")
         st.warning("This is a future feature. No emails will be sent.")
         st.text_input("Company", key="hr_company")
         st.text_input("Manager", key="hr_manager")
@@ -290,8 +290,8 @@ def candidate_journey():
 
 # ------------------- Recruiter Dashboard -------------------
 def recruiter_dashboard():
-    st.title("🧑‍💼 Recruiter Dashboard")
-    with st.sidebar.expander("🎚️ QoH Weight Sliders", expanded=True):
+    st.title("Recruiter Dashboard")
+    with st.sidebar.expander(" QoH Weight Sliders", expanded=True):
         w_jd = st.slider("JD Match", 0, 100, 25)
         w_ref = st.slider("References", 0, 100, 25)
         w_beh = st.slider("Behavior", 0, 100, 25)
@@ -304,7 +304,7 @@ def recruiter_dashboard():
 
     df = pd.DataFrame([
         {"Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84, "Skill": 92,
-         "Gaps": "Strategic Planning", "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education, 🔐 HR"},
+         "Gaps": "Strategic Planning", "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education,  HR"},
         {"Candidate": "Jasmine", "JD Match": 82, "Reference": 78, "Behavior": 90, "Skill": 80,
          "Gaps": "Leadership", "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"},
         {"Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70, "Skill": 78,
@@ -324,10 +324,10 @@ def recruiter_dashboard():
     st.subheader("📋 Candidate Comparison Table")
     st.dataframe(filtered)
 
-    st.subheader("🎯 AI Recommendations")
+    st.subheader(" AI Recommendations")
     for _, row in filtered.iterrows():
         if row["QoH Score"] >= 90:
-            st.success(f"{row['Candidate']}: 🚀 Strong hire. Green light.")
+            st.success(f"{row['Candidate']}:  Strong hire. Green light.")
         elif row["Reference"] < 75:
             st.warning(f"{row['Candidate']}: ⚠️ Weak reference. Needs follow-up.")
         elif row["Skill"] < 80:
@@ -336,8 +336,8 @@ def recruiter_dashboard():
             st.write(f"{row['Candidate']}: Ready for interviews.")
 
 # ------------------- Routing -------------------
-st.title("🚀 Welcome to GrowScore")
-portal = st.radio("Choose your portal:", ["👤 Candidate Portal", "🧑‍💼 Recruiter Portal"])
+st.title(" Welcome to GrowScore")
+portal = st.radio("Choose your portal:", ["👤 Candidate Portal", "🧑‍ Recruiter Portal"])
 if portal == "👤 Candidate Portal":
     candidate_journey()
 else:
