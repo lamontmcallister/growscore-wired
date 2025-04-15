@@ -27,45 +27,6 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# Session state setup
-if "supabase_session" not in st.session_state:
-    st.session_state.supabase_session = None
-if "supabase_user" not in st.session_state:
-    st.session_state.supabase_user = None
-if "show_app" not in st.session_state:
-    st.session_state.show_app = False
-if "is_signup" not in st.session_state:
-    st.session_state.is_signup = False
-
-# Auth handler
-def handle_auth(email, password):
-    try:
-        if st.session_state.is_signup:
-            result = supabase.auth.sign_up({"email": email, "password": password})
-        else:
-            result = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        if result and result.user:
-            st.session_state.supabase_user = result.user
-            st.session_state.supabase_session = result.session
-            st.session_state.show_app = True
-        else:
-            st.error("Authentication failed.")
-    except Exception as e:
-        st.error(f"Auth error: {e}")
-
-# Login UI gating
-if not st.session_state.show_app:
-    with st.sidebar:
-        st.title("🚪 Login to Skippr")
-        st.write("Sign in or sign up to continue.")
-        email = st.text_input("Email", key="login_email")
-        password = st.text_input("Password", type="password", key="login_password")
-        st.session_state.is_signup = st.checkbox("New user? Sign up", key="signup_toggle")
-        if st.button("Continue", key="auth_continue"):
-            handle_auth(email, password)
-    st.stop()
-
-
 # Session auth state
 if "supabase_session" not in st.session_state:
     st.session_state.supabase_session = None
@@ -74,6 +35,25 @@ if "supabase_user" not in st.session_state:
 
 # --- Skippr Homepage with Why Section + Carousel ---
 if "show_app" not in st.session_state:
+    st.session_state.show_app = False
+if "carousel_index" not in st.session_state:
+    st.session_state.carousel_index = 0
+
+if not st.session_state.show_app:
+    st.markdown('''
+        <div style='text-align: center; padding-top: 4rem;'>
+            <h1 style='color: #1A1A1A; font-size: 3rem;'>Skippr</h1>
+            <h3 style='color: #333;'>Predictive Hiring Starts Here</h3>
+            <p style='color: #555; font-size: 18px; max-width: 650px; margin: 2rem auto;'>
+                Skippr empowers candidates to showcase verified potential — and helps recruiters find high performers faster. 
+                Powered by AI. Centered on human growth.
+            </p>
+            <form action="" method="post">
+                <button type="submit" style='margin-top: 2rem;' onclick="document.getElementById("start-btn").click()">🚀 Get Started</button>
+            </form>
+        </div>
+    ''', unsafe_allow_html=True)
+
     # --- Why Skippr Section ---
     st.markdown('''
         <div style='text-align: left; max-width: 650px; margin: 3rem auto 0 auto; font-size: 17px; color: #444;'>
@@ -108,9 +88,15 @@ if "show_app" not in st.session_state:
             st.session_state.carousel_index += 1
 
     if st.button("🚀 Get Started", key="start-btn"):
+        st.session_state.show_app = True
+
     st.stop()
 
 # --- Sidebar (if logged in) ---
+with st.sidebar:
+    if st.session_state.supabase_user:
+        st.write(f"Welcome, {st.session_state.supabase_user['email']}")
+
 
 def render_full_app():
     
@@ -153,6 +139,28 @@ def render_full_app():
         st.session_state.supabase_user = None
     
     # Login UI
+    with st.sidebar:
+        st.header("🧭 Candidate Login")
+        auth_mode = st.radio("Choose Action", ["Login", "Sign Up"])
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        if auth_mode == "Login":
+            if st.button("🔓 Login"):
+                try:
+                    result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                    st.session_state.supabase_session = result.session
+                    st.session_state.supabase_user = result.user
+                    st.success(f"✅ Logged in as {email}")
+                except Exception as e:
+                    st.error(f"Login failed: {e}")
+        else:
+            if st.button("🆕 Register"):
+                try:
+                    result = supabase.auth.sign_up({"email": email, "password": password})
+                    st.success("✅ Account created. Check email for verification.")
+                except Exception as e:
+                    st.error(f"Signup failed: {e}")
+    
     if not st.session_state.supabase_session:
         st.warning("❌ No active session. Please log in.")
         st.stop()
@@ -369,6 +377,12 @@ def render_full_app():
     # ------------------- Recruiter Dashboard -------------------
     def recruiter_dashboard():
         st.title("Recruiter Dashboard")
+        with st.sidebar.expander(" QoH Weight Sliders", expanded=True):
+            w_jd = st.slider("JD Match", 0, 100, 25)
+            w_ref = st.slider("References", 0, 100, 25)
+            w_beh = st.slider("Behavior", 0, 100, 25)
+            w_skill = st.slider("Skills", 0, 100, 25)
+    
         total = w_jd + w_ref + w_beh + w_skill
         if total == 0:
             st.warning("Adjust sliders to view scores.")
