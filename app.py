@@ -1,5 +1,4 @@
-
-# Skippr App – Sidebar Login with Centered Landing Page + Full Platform
+# Skippr App – Final MVP: Sidebar Login + Hero + Toggle Views
 import streamlit as st
 import os
 import openai
@@ -70,23 +69,26 @@ with st.sidebar:
             st.session_state.supabase_user = None
             st.success("🔒 Logged out")
 
-# Recruiter/Candidate toggle
-st.markdown("<div style='position: fixed; top: 10px; right: 20px;'>", unsafe_allow_html=True)
+# Top-right view toggle
+st.markdown("<div style='position: fixed; top: 10px; right: 20px; z-index: 999;'>", unsafe_allow_html=True)
 mode = st.radio("Mode", ["Candidate", "Recruiter"], horizontal=True, key="mode_toggle")
 st.session_state.view_mode = mode
 st.markdown("</div>", unsafe_allow_html=True)
 
 # Main center panel
 if not st.session_state.supabase_user:
-    st.title("🚀 Welcome to Skippr")
-    st.subheader("Predictive Hiring, Verified Potential")
     st.markdown("""
-    **Why Skippr?**
-    - Get noticed faster with a Quality of Hire score
-    - Show verified references and skills
-    - See how you stack up against any job description
-    - Built to support *your* potential, not just your past titles
-    """)
+    <h1 style='font-size: 3em; font-weight: bold;'>🚀 Skippr is Your Superpower</h1>
+    <h3 style='color: #777;'>Smarter Hiring. Verified Potential. Real Results.</h3>
+    <hr style='border: 1px solid #eee;'>
+    <h4>🌟 Why Skippr?</h4>
+    <ul style='line-height: 1.8;'>
+      <li>🧠 Stand out with a predictive <b>Quality of Hire (QoH)</b> score</li>
+      <li>✅ Back up your profile with <b>verified references and real skills</b></li>
+      <li>🧭 Instantly match your resume to any job description</li>
+      <li>💡 Built to <b>amplify your potential</b>, not just echo your past</li>
+    </ul>
+    """, unsafe_allow_html=True)
     st.image("https://images.unsplash.com/photo-1519389950473-47ba0277781c", use_column_width=True)
 else:
     if st.session_state.view_mode == "Candidate":
