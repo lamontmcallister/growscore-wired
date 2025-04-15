@@ -436,8 +436,13 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 if st.session_state.page == "home":
-    # Homepage rendering (already defined in lovethis.py)
-    pass  # Assuming homepage content is already above
+
+# --- Homepage Button ---
+st.markdown("### Welcome to Skippr 👋")
+st.markdown("Get predictive, verified, human-centered hiring — powered by AI.")
+if st.button("🚀 Get Started"):
+    st.session_state.page = "app"
+  # Assuming homepage content is already above
 
 elif st.session_state.page == "app":
     render_full_app()
