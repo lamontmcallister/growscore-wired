@@ -61,8 +61,7 @@ def render_full_app():
     
     # Branding Header with logo
     try:
-        st.image("assets/logo.png", width=120)
-    except FileNotFoundError:
+            except FileNotFoundError:
         st.warning("⚠️ Logo not found — skipping logo display.")
     
     st.markdown("""
