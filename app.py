@@ -7,44 +7,54 @@ st.set_page_config(page_title="Skippr", layout="wide")
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 
+# --- STYLES ---
+st.markdown("""
+    <style>
+        .centered {
+            text-align: center;
+            padding-top: 4rem;
+        }
+        .mission-text {
+            font-size: 18px;
+            color: #444;
+            max-width: 800px;
+            margin: 2rem auto;
+            text-align: center;
+        }
+        .hero-title {
+            font-size: 3rem;
+            color: #1A1A1A;
+        }
+        .subtitle {
+            font-size: 1.25rem;
+            color: #555;
+            margin-top: 0.5rem;
+        }
+        .start-button {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- LANDING PAGE ---
 if not st.session_state.show_login:
     st.markdown("""
-        <div style='text-align: center; padding-top: 4rem;'>
-            <h1 style='font-size: 3rem; color: #222;'>Skippr</h1>
-            <h3 style='color: #555;'>Predictive Hiring. Verified Potential. Human-first AI.</h3>
-            <p style='font-size: 18px; color: #666; max-width: 700px; margin: 2rem auto;'>
-                Skippr helps job seekers showcase verified qualifications and lets hiring teams focus on real signals—not just resumes.
+        <div class='centered'>
+            <div class='hero-title'>Skippr</div>
+            <div class='subtitle'>Predictive Hiring. Verified Potential. Human-first AI.</div>
+            <div class='mission-text'>
+                Skippr empowers job seekers to prove their readiness and value — while helping hiring teams focus on 
+                verified skills, authentic growth, and predictive potential. We combine AI-driven insights with human-centered 
+                design to fix the broken hiring process, from resume to results.
+                <br><br>
                 Built with AI, Supabase, and Streamlit.
-            </p>
-            <form action="" method="post">
-                <button type="submit" style='margin-top: 2rem; font-size: 18px;' onclick="window.location.reload()">🚀 Get Started</button>
-            </form>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("### 🚀 Features")
-    st.markdown("#### 👤 Candidate Journey")
-    st.markdown("""
-- ✅ Resume upload + GPT-powered parsing  
-- ✅ Contact info + skill extraction  
-- ✅ Semantic job description matching (with radar chart)  
-- ✅ Reference + backchannel input  
-- ✅ Education section  
-- ✅ Growth roadmap with personalized recommendations  
-- ✅ Final verification summary and credibility score  
-    """)
-
-    st.markdown("#### 🧑‍💼 Recruiter Dashboard")
-    st.markdown("""
-- 🎯 Quality of Hire (QoH) scoring engine  
-- 🎚 Adjustable input weights (JD match, behavior, references, skills)  
-- 🧠 AI-powered candidate recommendations  
-- 📊 Side-by-side candidate comparison table  
-- 🔍 Skill gap analysis and performance predictions  
-    """)
-
+    # Single clean "Get Started" button
     if st.button("🚀 Get Started", key="start_button"):
         st.session_state.show_login = True
 
@@ -58,6 +68,5 @@ else:
     
     if st.button("Login"):
         st.success("🚀 Login successful (placeholder logic)")
-        # Add real auth logic here
 
     st.markdown("Don't have an account? [Sign up](#)", unsafe_allow_html=True)
