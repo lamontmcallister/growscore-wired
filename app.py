@@ -2,7 +2,6 @@
 import streamlit as st
 import os
 import openai
-
 import ast
 import pdfplumber
 import pandas as pd
@@ -438,7 +437,8 @@ if st.session_state.page == "home":
     st.markdown("### Predictive, verified, human-centered hiring — powered by AI.")
     st.markdown("Skippr helps candidates showcase their true potential, and helps recruiters focus on what matters.")
 # FIXED: removed invalid `if :` syntax
-        st.session_state.page = "app"
+if st.button("🚀 Get Started", key="start_button"):
+    st.session_state.page = "app"
 
 elif st.session_state.page == "app":
     render_full_app()
