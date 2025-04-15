@@ -2,7 +2,6 @@
 import streamlit as st
 import os
 import openai
-
 import ast
 import pdfplumber
 import pandas as pd
@@ -436,10 +435,10 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 if st.session_state.page == "home":
-    
+    st.title("Welcome to Skippr 🚀")
     st.markdown("### Predictive, verified, human-centered hiring — powered by AI.")
     st.markdown("Skippr helps candidates showcase their true potential, and helps recruiters focus on what matters.")
-    if st.button("🚀 Get Started"):
+    if :
         st.session_state.page = "app"
 
 elif st.session_state.page == "app":
