@@ -48,9 +48,7 @@ if not st.session_state.show_app:
                 Skippr empowers candidates to showcase verified potential — and helps recruiters find high performers faster. 
                 Powered by AI. Centered on human growth.
             </p>
-            <form action="" method="post">
-                <button type="submit" style='margin-top: 2rem;' onclick="document.getElementById("start-btn").click()">🚀 Get Started</button>
-            </form>
+            <button style='margin-top: 2rem; font-size: 18px;' onClick='window.location.reload()'>🚀 Get Started</button>
         </div>
     ''', unsafe_allow_html=True)
 
