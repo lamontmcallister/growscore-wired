@@ -27,7 +27,7 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-
+# Session state setup
 if "supabase_session" not in st.session_state:
     st.session_state.supabase_session = None
 if "supabase_user" not in st.session_state:
@@ -37,7 +37,7 @@ if "show_app" not in st.session_state:
 if "is_signup" not in st.session_state:
     st.session_state.is_signup = False
 
-# Auth logic
+# Auth handler
 def handle_auth(email, password):
     try:
         if st.session_state.is_signup:
@@ -53,7 +53,7 @@ def handle_auth(email, password):
     except Exception as e:
         st.error(f"Auth error: {e}")
 
-# Login UI
+# Login UI gating
 if not st.session_state.show_app:
     with st.sidebar:
         st.title("🚪 Login to Skippr")
@@ -65,7 +65,6 @@ if not st.session_state.show_app:
             handle_auth(email, password)
     st.stop()
 
-# Placeholder success content
 
 # Session auth state
 if "supabase_session" not in st.session_state:
