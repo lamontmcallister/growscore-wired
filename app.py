@@ -34,6 +34,7 @@ if "supabase_user" not in st.session_state:
     st.session_state.supabase_user = None
 
 
+
 # --- AUTH LANDING + LOGIN ---
 if "page" not in st.session_state:
     st.session_state.page = "landing"
@@ -49,7 +50,8 @@ def show_landing():
                 Skippr empowers job seekers to prove their readiness and value — while helping hiring teams focus on 
                 verified skills, authentic growth, and predictive potential. Built with AI, Supabase, and Streamlit.
             </p>
-        """, unsafe_allow_html=True)
+        </div>
+    """, unsafe_allow_html=True)
 
     if st.button("🚀 Get Started"):
         st.session_state.page = "auth"
@@ -65,8 +67,8 @@ def show_auth():
             try:
                 res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state.user = res.user
-                st.session_state.page = "main"
                 st.success("✅ Login successful!")
+                st.session_state.page = "candidate"
             except Exception as e:
                 st.error("Login failed. Check your credentials.")
     else:
@@ -77,7 +79,7 @@ def show_auth():
             except Exception as e:
                 st.error("Account creation failed.")
 
-# Show landing/auth or app depending on login state
+# Route: Landing → Login → Candidate Journey (full app starts here)
 if st.session_state.page == "landing":
     show_landing()
     st.stop()
@@ -86,13 +88,8 @@ elif st.session_state.page == "auth":
     st.stop()
 
 
-# --- Skippr Homepage with Why Section + Carousel ---
-if "show_app" not in st.session_state:
-    st.session_state.show_app = False
-if "carousel_index" not in st.session_state:
-    st.session_state.carousel_index = 0
+# --- Candidate Journey Starts Here ---
 
-if not st.session_state.show_app:
     st.markdown('''
         <div style='text-align: center; padding-top: 4rem;'>
             <h1 style='color: #1A1A1A; font-size: 3rem;'>Skippr</h1>
