@@ -438,7 +438,7 @@ if st.session_state.page == "home":
     
     st.markdown("### Predictive, verified, human-centered hiring — powered by AI.")
     st.markdown("Skippr helps candidates showcase their true potential, and helps recruiters focus on what matters.")
-    if :
+    if st.button("🚀 Get Started"):
         st.session_state.page = "app"
 
 elif st.session_state.page == "app":
