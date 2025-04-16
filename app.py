@@ -3,7 +3,6 @@
 import streamlit as st
 import os
 import openai
-
 import ast
 import pdfplumber
 import pandas as pd
@@ -74,7 +73,6 @@ if not st.session_state.show_app:
 # --- MAIN APP BELOW ---
 if st.session_state.show_app:
     show_candidate_journey()
-        st.session_state.page = "app"
 
 elif st.session_state.page == "app":
     render_full_app()
