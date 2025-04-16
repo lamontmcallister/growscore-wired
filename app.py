@@ -39,8 +39,6 @@ if "show_app" not in st.session_state:
 if "carousel_index" not in st.session_state:
     st.session_state.carousel_index = 0
 
- and st.session_state.carousel_index > 0:
-            st.session_state.carousel_index -= 1
     with col3:
         if st.button("▶️", key="next_slide") and st.session_state.carousel_index < len(carousel_slides) - 1:
             st.session_state.carousel_index += 1
