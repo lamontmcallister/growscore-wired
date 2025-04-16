@@ -36,12 +36,7 @@ if "supabase_user" not in st.session_state:
 # --- Skippr Homepage with Why Section + Carousel ---
 if "show_app" not in st.session_state:
     st.session_state.show_app = False
-if "carousel_index" not in st.session_state:
-    st.session_state.carousel_index = 0
 
-    with col3:
-        if st.button("▶️", key="next_slide") and st.session_state.carousel_index < len(carousel_slides) - 1:
-            st.session_state.carousel_index += 1
 
     if st.button("🚀 Get Started", key="start-btn"):
         st.session_state.show_app = True
