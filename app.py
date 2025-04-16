@@ -131,7 +131,7 @@ if not st.session_state.show_app:
 # --- Sidebar (if logged in) ---
 with st.sidebar:
     if st.session_state.supabase_user:
-        st.write(f"Welcome, {st.session_state.supabase_user['email']}")
+        st.write(f"Welcome, {getattr(st.session_state.supabase_user, 'email', 'Unknown')}")
 
 
 def render_full_app():
