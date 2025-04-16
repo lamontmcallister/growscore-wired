@@ -90,7 +90,4 @@ def show_recruiter_dashboard():
     st.success("Jordan ranks highest overall. Recommend for next round.")
 
 # ---------- VIEW ROUTING ----------
-if st.session_state.view_mode == "Candidate":
-    show_candidate_journey()
-else:
-    show_recruiter_dashboard()
+# ERROR: Could not locate routing logic in uploaded app
