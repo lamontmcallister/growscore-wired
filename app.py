@@ -1,4 +1,4 @@
-# Skippr App – Sidebar Login with Centered Landing Page + Full Platform
+# Skippr App – Integrated One-Page Version with Secure Login and Toggle Views
 import streamlit as st
 import os
 import openai
@@ -37,12 +37,12 @@ if "view_mode" not in st.session_state:
 
 # Sidebar login/signup
 with st.sidebar:
-    st.header("👤 Welcome to Skippr")
+    st.markdown("### 👤 Welcome to Skippr")
     auth_mode = st.radio("Login or Sign Up", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
-    if auth_mode == "Login" and st.button("Login"):
+    if auth_mode == "Login" and st.button("🔐 Login"):
         try:
             user = supabase.auth.sign_in_with_password({"email": email, "password": password})
             st.session_state.supabase_session = user.session
@@ -51,7 +51,7 @@ with st.sidebar:
         except Exception as e:
             st.error(f"Login failed: {e}")
 
-    elif auth_mode == "Sign Up" and st.button("Sign Up"):
+    elif auth_mode == "Sign Up" and st.button("🆕 Sign Up"):
         try:
             user = supabase.auth.sign_up({"email": email, "password": password})
             st.success("✅ Account created. Please check your email.")
@@ -63,47 +63,58 @@ with st.sidebar:
             email_display = st.session_state.supabase_user.email
         except AttributeError:
             email_display = st.session_state.supabase_user["email"]
-        st.markdown(f"Logged in as: `{email_display}`")
-        if st.button("Logout"):
+        st.markdown(f"✅ Logged in as: `{email_display}`")
+        if st.button("🚪 Logout"):
             st.session_state.supabase_session = None
             st.session_state.supabase_user = None
             st.success("🔒 Logged out")
 
-# Recruiter/Candidate toggle
+# Top-right toggle
 st.markdown("<div style='position: fixed; top: 10px; right: 20px;'>", unsafe_allow_html=True)
-mode = st.radio("Mode", ["Candidate", "Recruiter"], horizontal=True, key="mode_toggle")
+mode = st.radio("View Mode", ["Candidate", "Recruiter"], horizontal=True, key="mode_toggle")
 st.session_state.view_mode = mode
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Main center panel
+# Main content
 if not st.session_state.supabase_user:
-    st.title("🚀 Welcome to Skippr")
-    st.subheader("Predictive Hiring, Verified Potential")
     st.markdown("""
-    **Why Skippr?**
-    - Get noticed faster with a Quality of Hire score
-    - Show verified references and skills
-    - See how you stack up against any job description
-    - Built to support *your* potential, not just your past titles
-    """)
-    st.image("https://images.unsplash.com/photo-1519389950473-47ba0277781c", use_column_width=True)
+        <div style='text-align: center; padding-top: 3rem;'>
+            <img src='https://i.ibb.co/tPDqFQF/skippr-logo-dark.png' width='100'/>
+            <h1 style='font-size: 2.5em; margin-bottom: 0;'>🚀 Welcome to Skippr</h1>
+            <h3 style='color: #555;'>Predictive Hiring, Verified Potential</h3>
+            <h4 style='margin-top: 2rem;'>Why Skippr?</h4>
+            <ul style='text-align: left; max-width: 500px; margin: auto; line-height: 1.6;'>
+              <li>🧠 Get noticed faster with a <b>Quality of Hire</b> score</li>
+              <li>✅ Show <b>verified references and real skills</b></li>
+              <li>🧭 Match your resume to any job description</li>
+              <li>💡 Built to <b>support your potential</b>, not just your past titles</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
 else:
     if st.session_state.view_mode == "Candidate":
         st.header("🎯 Candidate Journey")
-        st.subheader("Step 1: Upload Your Resume")
-        st.file_uploader("Upload resume as PDF", type=["pdf"])
-        st.subheader("Step 2: Add Education")
-        st.text_input("School Name")
-        st.text_input("Degree")
-        st.text_input("Graduation Year")
-        st.subheader("Step 3: Enter References")
-        st.text_input("Reference Name")
-        st.text_input("Reference Email")
-        st.subheader("Step 4: Match to Job Descriptions")
-        st.text_area("Paste job description")
-        st.button("Analyze Fit")
-        st.subheader("Final Step: Review Your Quality of Hire Score")
-        st.metric("Quality of Hire", "82", delta="+12")
+
+        with st.expander("📄 Step 1: Upload Resume"):
+            st.file_uploader("Upload your resume (PDF)", type=["pdf"])
+
+        with st.expander("🎓 Step 2: Add Education"):
+            st.text_input("School Name")
+            st.text_input("Degree")
+            st.text_input("Graduation Year")
+
+        with st.expander("🤝 Step 3: Add References"):
+            st.text_input("Reference Name")
+            st.text_input("Reference Email")
+
+        with st.expander("📝 Step 4: Match to Job Descriptions"):
+            st.text_area("Paste job description here")
+            st.button("Analyze Fit")
+
+        with st.expander("📈 Final Step: Review Your Score"):
+            st.metric("Quality of Hire", "82", delta="+12")
+            st.success("Looking great! 🎉 Ready to share your profile.")
+
     else:
         st.header("📊 Recruiter Dashboard")
         st.subheader("Candidate Comparison Table")
@@ -114,10 +125,10 @@ else:
             "Reference Score": [5, 4, 5]
         }))
 
-        st.subheader("Adjust QoH Weights")
-        st.slider("Resume Match Weight", 0, 100, 40)
-        st.slider("Reference Score Weight", 0, 100, 30)
-        st.slider("Education Score Weight", 0, 100, 30)
+        st.subheader("Adjust Quality of Hire Weights")
+        st.slider("Resume Match", 0, 100, 40)
+        st.slider("References", 0, 100, 30)
+        st.slider("Education", 0, 100, 30)
 
-        st.subheader("📌 AI Recommendations")
-        st.success("Jordan is a strong fit based on role alignment and references.")
+        st.subheader("AI-Powered Recommendation")
+        st.success("✅ Jordan is your strongest match with verified skills and references.")
