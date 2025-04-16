@@ -3,7 +3,6 @@ import streamlit as st
 import os
 import openai
 import ast
-
 import pdfplumber
 import pandas as pd
 import numpy as np
@@ -58,45 +57,45 @@ with st.sidebar:
 
 
 def render_full_app():
-    
-    
+
+
     # Apply custom CSS from assets
     try:
         with open("assets/style.css") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         st.warning("⚠️ Custom CSS not found. Using default styling.")
-    
-    
+
+
     # Load secrets
     SUPABASE_URL = st.secrets["supabase"]["url"]
     SUPABASE_KEY = st.secrets["supabase"]["key"]
     OPENAI_KEY = st.secrets["openai"]["key"]
-    
+
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     openai.api_key = OPENAI_KEY
-    
+
     # Auth state
-    
+
     # Branding Header with logo
     try:
         st.image("assets/logo.png", width=120)
     except FileNotFoundError:
         st.warning("⚠️ Logo not found — skipping logo display.")
-    
+
     st.markdown("""
     <div style='text-align: center; margin-top: -10px;'>
         <h1 style='color: white;'>Welcome to Skippr</h1>
         <p style='color: #CCCCCC; font-size: 18px;'>🧭 Helping you skip the noise and land faster.</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    
+
+
     if "supabase_session" not in st.session_state:
         st.session_state.supabase_session = None
     if "supabase_user" not in st.session_state:
         st.session_state.supabase_user = None
-    
+
     # Login UI
     with st.sidebar:
         st.header("🧭 Candidate Login")
@@ -119,18 +118,18 @@ def render_full_app():
                     st.success("✅ Account created. Check email for verification.")
                 except Exception as e:
                     st.error(f"Signup failed: {e}")
-    
+
     if not st.session_state.supabase_session:
         st.warning("❌ No active session. Please log in.")
         st.stop()
-        
+
     skills_pool = ["Python", "SQL", "Data Analysis", "Leadership", "Project Management",
                    "Communication", "Strategic Planning", "Excel", "Machine Learning"]
-    
+
     leadership_skills = ["Ownership", "Bias for Action", "Earn Trust", "Deliver Results",
                          "Think Big", "Customer Obsession", "Invent & Simplify", "Hire & Develop",
                          "Dive Deep", "Frugality", "Have Backbone"]
-    
+
     def extract_skills_from_resume(text):
         prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
         try:
@@ -142,7 +141,7 @@ def render_full_app():
             return ast.literal_eval(res.choices[0].message.content.strip())
         except:
             return ["Python", "SQL", "Excel"]
-    
+
     def extract_contact_info(text):
         prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\n\n{text}"
         try:
@@ -154,7 +153,7 @@ def render_full_app():
             return ast.literal_eval(res.choices[0].message.content.strip())
         except:
             return {"name": "", "email": "", "title": ""}
-    
+
     def match_resume_to_jds(resume_text, jd_texts):
         prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following JDs:\n"
         for i, jd in enumerate(jd_texts):
@@ -169,7 +168,7 @@ def render_full_app():
             return ast.literal_eval(res.choices[0].message.content.strip())
         except:
             return [np.random.randint(70, 90) for _ in jd_texts]
-    
+
     def plot_radar(jd_scores):
         labels = [f"JD {i+1}" for i in range(len(jd_scores))]
         angles = np.linspace(0, 2 * np.pi, len(jd_scores), endpoint=False).tolist()
@@ -181,7 +180,7 @@ def render_full_app():
         ax.set_thetagrids(np.degrees(angles[:-1]), labels)
         ax.set_ylim(0, 100)
         st.pyplot(fig)
-    
+
     def generate_growth_recs():
         return [
             "- [Coursera: Data & Business Skills](https://coursera.org)",
@@ -196,7 +195,7 @@ def render_full_app():
         def next_step(): st.session_state.step = step + 1
         def prev_step(): st.session_state.step = max(0, step - 1)
         st.progress((step + 1) / 9)
-    
+
         if step == 0:
             st.subheader("📝 Step 1: Candidate Info + Portfolio Sync")
             st.markdown("Welcome! Let’s start with your contact info and resume.")
@@ -207,7 +206,7 @@ def render_full_app():
             st.text_input("🔗 LinkedIn Profile", key="cand_linkedin")
             st.text_input("🔗 GitHub Profile", key="cand_github")
             st.text_input("🌐 Portfolio / Personal Site", key="cand_portfolio")
-    
+
             uploaded = st.file_uploader("📎 Upload Resume (PDF or TXT)", type=["pdf", "txt"])
             if uploaded:
                 if uploaded.type == "application/pdf":
@@ -224,9 +223,9 @@ def render_full_app():
                     "cand_title": title_val or contact.get("title", "")
                 }
                 st.success("✅ Resume parsed and fields updated.")
-    
+
             st.button("Next", on_click=next_step)
-    
+
         elif step == 1:
             st.subheader(" Step 2: Select Your Top Skills")
             st.markdown("Review and adjust the top skills extracted from your resume.")
@@ -234,7 +233,7 @@ def render_full_app():
             st.session_state.selected_skills = selected
             st.button("Back", on_click=prev_step)
             st.button("Next", on_click=next_step)
-    
+
         elif step == 2:
             st.subheader("📋 Step 3: Behavior Survey")
             opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
@@ -245,7 +244,7 @@ def render_full_app():
             st.session_state.behavior_score = round((score_map[q1] + score_map[q2] + score_map[q3]) / 3 * 20, 1)
             st.button("Back", on_click=prev_step)
             st.button("Next", on_click=next_step)
-    
+
         elif step == 3:
             st.subheader("📨 Step 4: References (Simulated)")
             def add_ref(i):
@@ -259,7 +258,7 @@ def render_full_app():
             st.session_state.references = [add_ref(0), add_ref(1)]
             st.button("Back", on_click=prev_step)
             st.button("Next", on_click=next_step)
-    
+
         elif step == 4:
             st.subheader("🏢 Step 5: Backchannel Reference")
             name = st.text_input("Contact Name", key="bc_name")
@@ -270,7 +269,7 @@ def render_full_app():
                 st.success("Backchannel request sent.")
             st.button("Back", on_click=prev_step)
             st.button("Next", on_click=next_step)
-    
+
         elif step == 5:
             st.subheader("🎓 Step 6: Education")
             degree = st.text_input("Degree", key="edu_degree")
@@ -281,7 +280,7 @@ def render_full_app():
             st.session_state.education = f"{degree} in {major}, {school}, {year}"
             st.button("Back", on_click=prev_step)
             st.button("Next", on_click=next_step)
-    
+
         elif step == 6:
             st.subheader(" Step 7: HR Performance Checkpoint")
             st.warning("This is a future feature. No emails will be sent.")
@@ -292,7 +291,7 @@ def render_full_app():
             st.session_state.hr_check = "✅ HR Request Authorized (simulated)"
             st.button("Back", on_click=prev_step)
             st.button("Next", on_click=next_step)
-    
+
         elif step == 7:
             st.subheader("📄 Step 8: Resume vs JD Skill Match")
             jd1 = st.text_area("Paste JD 1", key="jd_1")
@@ -306,7 +305,7 @@ def render_full_app():
                 plot_radar(jd_scores)
             st.button("Back", on_click=prev_step)
             st.button("Next", on_click=next_step)
-    
+
         elif step == 8:
             st.subheader("✅ Step 9: Final Summary & Growth Roadmap")
             jd_scores = st.session_state.get("jd_scores", [])
@@ -316,7 +315,7 @@ def render_full_app():
             behavior = st.session_state.get("behavior_score", 50)
             qoh = round((skill_score + ref_score + behavior + avg_jd) / 4, 1)
             st.metric("💡 Quality of Hire Score", f"{qoh}/100")
-    
+
             st.subheader("🔍 Verification Table")
             st.table({
                 "Resume": ["✅ GPT Verified"],
@@ -327,12 +326,12 @@ def render_full_app():
                 "Behavior": ["🟠 Self-Reported"],
                 "JD Match": [f"{avg_jd}%"]
             })
-    
+
             st.subheader("📈 Growth Roadmap")
             for rec in generate_growth_recs():
                 st.markdown(rec)
             st.success("🎉 You’ve completed your GrowScore profile!")
-    
+
     # ------------------- Recruiter Dashboard -------------------
     def recruiter_dashboard():
         st.title("Recruiter Dashboard")
@@ -341,12 +340,12 @@ def render_full_app():
             w_ref = st.slider("References", 0, 100, 25)
             w_beh = st.slider("Behavior", 0, 100, 25)
             w_skill = st.slider("Skills", 0, 100, 25)
-    
+
         total = w_jd + w_ref + w_beh + w_skill
         if total == 0:
             st.warning("Adjust sliders to view scores.")
             return
-    
+
         df = pd.DataFrame([
             {"Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84, "Skill": 92,
              "Gaps": "Strategic Planning", "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education,  HR"},
@@ -355,20 +354,20 @@ def render_full_app():
             {"Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70, "Skill": 78,
              "Gaps": "Communication", "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"}
         ])
-    
+
         selected = st.multiselect("Compare Candidates", df["Candidate"].tolist(), default=df["Candidate"].tolist())
         filtered = df[df["Candidate"].isin(selected)].copy()
-    
+
         filtered["QoH Score"] = (
             filtered["JD Match"] * w_jd +
             filtered["Reference"] * w_ref +
             filtered["Behavior"] * w_beh +
             filtered["Skill"] * w_skill
         ) / total
-    
+
         st.subheader("📋 Candidate Comparison Table")
         st.dataframe(filtered)
-    
+
         st.subheader(" AI Recommendations")
         for _, row in filtered.iterrows():
             if row["QoH Score"] >= 90:
@@ -379,7 +378,7 @@ def render_full_app():
                 st.info(f"{row['Candidate']}: Needs support in **{row['Gaps']}**.")
             else:
                 st.write(f"{row['Candidate']}: Ready for interviews.")
-    
+
     # ------------------- Routing -------------------
     st.title(" Welcome to GrowScore")
     portal = st.radio("Choose your portal:", ["👤 Candidate Portal", "🧑‍ Recruiter Portal"])
@@ -387,7 +386,7 @@ def render_full_app():
         candidate_journey()
     else:
         recruiter_dashboard()
-    
+
 
 # --- Routing Logic ---
 if "page" not in st.session_state:
