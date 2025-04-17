@@ -195,16 +195,18 @@ def candidate_journey():
 
         st.markdown(f"**Personalized Roadmap:**\n\n{roadmap}")
         st.success("🎉 Candidate Journey Complete!")
-# --- RECRUITER DASHBOARD ---
+# --- RECRUITER DASHBOARD (Enhanced UI) ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
     st.sidebar.header("Adjust Scoring Weights")
 
+    # 🎚 Scoring Weights
     w_qoh = st.sidebar.slider("Quality of Hire", 0, 100, 40)
     w_jd = st.sidebar.slider("JD Match", 0, 100, 30)
     w_behavior = st.sidebar.slider("Behavior", 0, 100, 20)
     w_skills = st.sidebar.slider("Skills", 0, 100, 10)
 
+    # 📊 Candidate Scorecards
     st.subheader("📋 Candidate Comparison")
 
     candidates = pd.DataFrame([
@@ -223,16 +225,31 @@ def recruiter_dashboard():
     candidates["Total Score"] = candidates.apply(calc_total, axis=1)
     candidates = candidates.sort_values("Total Score", ascending=False)
 
-    st.dataframe(candidates)
+    col1, col2 = st.columns(2)
+    for i, (col, row) in enumerate(zip([col1, col2], candidates.itertuples())):
+        with col:
+            st.markdown(f"### 👤 {row.Name}")
+            st.metric("Total Score", f"{round(row._6, 1)}")
+            st.markdown(f"- **QoH:** {row.QoH}")
+            st.markdown(f"- **JD Match:** {row._2}")
+            st.markdown(f"- **Behavior:** {row._3}")
+            st.markdown(f"- **Skills:** {row._4}")
 
-    st.subheader("🧠 AI Recommendation")
+    # 🧠 GPT-Backed Summary
     top = candidates.iloc[0]["Name"]
-    st.success(f"⭐ Based on scoring weights, **{top}** is the most aligned candidate.")
+    st.markdown("---")
+    st.subheader("🧠 AI Insight")
+    st.success(f"⭐ Based on current weightings, **{top}** is the most aligned candidate for the role.")
+ate.")
 # --- LOGIN + SIGNUP + IMAGE ---
 def login_ui():
-    st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", use_column_width=True)
-    st.markdown("### From Rejection to Revolution.")
-    st.caption("I didn’t get the job. I built the platform that fixes the problem.")
+    st.markdown("##")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=400)
+        st.markdown("### From Rejection to Revolution.")
+        st.caption("💡 *I didn’t get the job. I built the platform that fixes the problem.*")
+
     st.markdown("---")
 
     with st.sidebar:
