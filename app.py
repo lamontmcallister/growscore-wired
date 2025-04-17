@@ -274,6 +274,10 @@ def recruiter_dashboard():
     selected = st.multiselect("👥 Compare Candidates", df["Candidate"].tolist(), default=df["Candidate"].tolist())
     filtered = df[df["Candidate"].isin(selected)].copy()
 
+    if filtered.empty:
+        st.info("No candidates selected.")
+        return
+
     filtered["QoH Score"] = (
         filtered["JD Match"] * w_jd +
         filtered["Reference"] * w_ref +
@@ -285,6 +289,9 @@ def recruiter_dashboard():
     st.dataframe(filtered)
 
     st.subheader("🤖 AI Recommendations")
+
+    top = filtered.sort_values("QoH Score", ascending=False).iloc[0]["Candidate"]
+
     for _, row in filtered.iterrows():
         if row["QoH Score"] >= 90:
             st.success(f"✅ {row['Candidate']}: Strong hire. Green light.")
@@ -294,7 +301,6 @@ def recruiter_dashboard():
             st.info(f"ℹ️ {row['Candidate']}: Needs support in **{row['Gaps']}**.")
         else:
             st.write(f"{row['Candidate']}: Ready for interviews.")
-
     
 
     # 🧠 GPT-Backed Summary
