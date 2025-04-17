@@ -226,14 +226,14 @@ def recruiter_dashboard():
     candidates = candidates.sort_values("Total Score", ascending=False)
 
     col1, col2 = st.columns(2)
-    for i, (col, row) in enumerate(zip([col1, col2], candidates.itertuples())):
+       for i, (col, row) in enumerate(zip([col1, col2], candidates.to_dict(orient="records"))):
         with col:
-            st.markdown(f"### 👤 {row.Name}")
-            st.metric("Total Score", f"{round(row._6, 1)}")
-            st.markdown(f"- **QoH:** {row.QoH}")
-            st.markdown(f"- **JD Match:** {row._2}")
-            st.markdown(f"- **Behavior:** {row._3}")
-            st.markdown(f"- **Skills:** {row._4}")
+            st.markdown(f"### 👤 {row['Name']}")
+            st.metric("Total Score", f"{round(row['Total Score'], 1)}")
+            st.markdown(f"- **QoH:** {row['QoH']}")
+            st.markdown(f"- **JD Match:** {row['JD Match']}")
+            st.markdown(f"- **Behavior:** {row['Behavior']}")
+            st.markdown(f"- **Skills:** {row['Skills']}")
 
     # 🧠 GPT-Backed Summary
     top = candidates.iloc[0]["Name"]
