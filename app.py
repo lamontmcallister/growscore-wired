@@ -1,3 +1,5 @@
+# skippr_app_full_final.py
+
 import streamlit as st
 import openai
 import ast
@@ -9,7 +11,6 @@ from datetime import datetime
 
 # --- CONFIG ---
 st.set_page_config(page_title="Skippr", layout="wide")
-
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
 OPENAI_KEY = st.secrets["openai"]["key"]
@@ -21,16 +22,12 @@ for k in ["supabase_session", "supabase_user", "step"]:
     if k not in st.session_state:
         st.session_state[k] = None if k != "step" else 0
 
-# --- Skill Pools ---
 skills_pool = ["Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
                "Communication", "Strategic Planning", "Excel", "Project Management"]
-leadership_skills = ["Ownership", "Bias for Action", "Earn Trust", "Deliver Results",
-                     "Think Big", "Customer Obsession", "Invent & Simplify",
-                     "Dive Deep", "Frugality", "Have Backbone", "Hire & Develop"]
 
 # --- GPT HELPERS ---
 def extract_skills_from_resume(text):
-    prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
+    prompt = f"Extract 5–10 professional skills from this resume:\\n{text}\\nReturn as a Python list."
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -42,7 +39,7 @@ def extract_skills_from_resume(text):
         return ["Python", "SQL", "Excel"]
 
 def extract_contact_info(text):
-    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\n\n{text}"
+    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\\n\\n{text}"
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -54,10 +51,10 @@ def extract_contact_info(text):
         return {"name": "", "email": "", "title": ""}
 
 def match_resume_to_jds(resume_text, jd_texts):
-    prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following JDs:\n"
+    prompt = f"Given this resume:\\n{resume_text}\\n\\nMatch semantically to the following JDs:\\n"
     for i, jd in enumerate(jd_texts):
-        prompt += f"\nJD {i+1}:\n{jd}\n"
-    prompt += "\nReturn a list of match scores, e.g. [82, 76]"
+        prompt += f"\\nJD {i+1}:\\n{jd}\\n"
+    prompt += "\\nReturn a list of match scores, e.g. [82, 76]"
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -80,8 +77,7 @@ def plot_radar(jd_scores):
     ax.set_thetagrids(np.degrees(angles[:-1]), labels)
     ax.set_ylim(0, 100)
     st.pyplot(fig)
-
-# --- CANDIDATE JOURNEY FUNCTION ---
+# --- CANDIDATE JOURNEY (10 Steps) ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
     def next_step(): st.session_state.step = step + 1
@@ -90,7 +86,6 @@ def candidate_journey():
     st.title("🚀 Candidate Journey")
     st.progress((step + 1) / 10)
 
-    # --- STEP 1: Resume + Contact Info ---
     if step == 0:
         st.subheader("📝 Step 1: Resume Upload + Contact Info")
         st.text_input("Full Name", key="cand_name")
@@ -106,15 +101,13 @@ def candidate_journey():
             st.success("✅ Resume parsed.")
         st.button("Next", on_click=next_step)
 
-    # --- STEP 2: Skills Selection ---
     elif step == 1:
-        st.subheader("📋 Step 2: Top Skills")
-        selected = st.multiselect("Select Your Skills", skills_pool, default=st.session_state.get("resume_skills", []))
+        st.subheader("📋 Step 2: Select Skills")
+        selected = st.multiselect("Choose skills:", skills_pool, default=st.session_state.get("resume_skills", []))
         st.session_state.selected_skills = selected
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    # --- STEP 3: Behavior Survey ---
     elif step == 2:
         st.subheader("🧠 Step 3: Behavior Survey")
         opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
@@ -126,7 +119,6 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    # --- STEP 4: References ---
     elif step == 3:
         st.subheader("🤝 Step 4: References")
         st.text_input("Reference 1 Name")
@@ -136,7 +128,6 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    # --- STEP 5: Backchannel ---
     elif step == 4:
         st.subheader("📣 Step 5: Backchannel")
         st.text_input("Backchannel Name")
@@ -144,7 +135,7 @@ def candidate_journey():
         st.text_area("Topic for Feedback")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
-    # --- STEP 6: Education ---
+
     elif step == 5:
         st.subheader("🎓 Step 6: Education")
         st.text_input("Degree")
@@ -154,7 +145,6 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    # --- STEP 7: HR Check ---
     elif step == 6:
         st.subheader("🏢 Step 7: HR Check")
         st.text_input("Company")
@@ -164,9 +154,8 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    # --- STEP 8: JD Matching ---
     elif step == 7:
-        st.subheader("📄 Step 8: Job Description Matching")
+        st.subheader("📄 Step 8: JD Matching")
         jd1 = st.text_area("Paste JD 1")
         jd2 = st.text_area("Paste JD 2")
         if jd1 and "resume_text" in st.session_state:
@@ -178,7 +167,6 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    # --- STEP 9: Summary ---
     elif step == 8:
         st.subheader("📊 Step 9: Quality of Hire Summary")
         jd_scores = st.session_state.get("jd_scores", [70, 80])
@@ -192,7 +180,6 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next: Growth Pathway", on_click=next_step)
 
-    # --- STEP 10: Growth Pathway ---
     elif step == 9:
         st.subheader("🚀 Step 10: Career Growth Roadmap")
         prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nGenerate a growth roadmap for this candidate:\n- 30-day plan\n- 60-day plan\n- 90-day plan\n- 6-month vision\n- 1-year career trajectory"
@@ -204,34 +191,50 @@ def candidate_journey():
             )
             roadmap = response.choices[0].message.content.strip()
         except:
-            roadmap = "• 30-Day: Learn the product\n• 60-Day: Deliver first project\n• 90-Day: Take ownership of a team\n• 6-Month: Lead strategy\n• 1-Year: Senior leadership track"
+            roadmap = "• 30-Day: Learn the product\n• 60-Day: Deliver first project\n• 90-Day: Lead team\n• 6-Month: Strategic roadmap\n• 1-Year: Sr. Leadership path"
 
         st.markdown(f"**Personalized Roadmap:**\n\n{roadmap}")
         st.success("🎉 Candidate Journey Complete!")
 # --- RECRUITER DASHBOARD ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
+    st.sidebar.header("Adjust Scoring Weights")
 
-    # Adjustable weight sliders
-    st.sidebar.header("Scoring Weights")
     w_qoh = st.sidebar.slider("Quality of Hire", 0, 100, 40)
     w_jd = st.sidebar.slider("JD Match", 0, 100, 30)
     w_behavior = st.sidebar.slider("Behavior", 0, 100, 20)
     w_skills = st.sidebar.slider("Skills", 0, 100, 10)
 
-    # Candidate table mock
     st.subheader("📋 Candidate Comparison")
-    data = pd.DataFrame([
-        {"Name": "Taylor", "QoH": 87, "JD Match": 82, "Behavior": 76, "Skills": 85},
-        {"Name": "Jordan", "QoH": 79, "JD Match": 77, "Behavior": 90, "Skills": 80}
+
+    candidates = pd.DataFrame([
+        {"Name": "Jamie", "QoH": 87, "JD Match": 82, "Behavior": 76, "Skills": 85},
+        {"Name": "Taylor", "QoH": 79, "JD Match": 77, "Behavior": 90, "Skills": 80}
     ])
-    st.dataframe(data)
+
+    def calc_total(row):
+        return (
+            row["QoH"] * (w_qoh/100) +
+            row["JD Match"] * (w_jd/100) +
+            row["Behavior"] * (w_behavior/100) +
+            row["Skills"] * (w_skills/100)
+        )
+
+    candidates["Total Score"] = candidates.apply(calc_total, axis=1)
+    candidates = candidates.sort_values("Total Score", ascending=False)
+
+    st.dataframe(candidates)
 
     st.subheader("🧠 AI Recommendation")
-    st.info("Taylor is the best match overall when weighted by QoH and JD Match.")
-
-# --- LOGIN + SIGNUP ---
+    top = candidates.iloc[0]["Name"]
+    st.success(f"⭐ Based on scoring weights, **{top}** is the most aligned candidate.")
+# --- LOGIN + SIGNUP + IMAGE ---
 def login_ui():
+    st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", use_column_width=True)
+    st.markdown("### From Rejection to Revolution.")
+    st.caption("I didn’t get the job. I built the platform that fixes the problem.")
+    st.markdown("---")
+
     with st.sidebar:
         st.header("🔐 Login / Sign Up")
         mode = st.radio("Mode", ["Login", "Sign Up"])
@@ -253,7 +256,7 @@ def login_ui():
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
-# --- MAIN ROUTING ---
+# --- ROUTING ---
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal:", ["Candidate", "Recruiter"])
     if view == "Candidate":
