@@ -248,7 +248,7 @@ def login_ui():
     with col2:
         st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=400)
         st.markdown("### From Rejection to Revolution.")
-        st.caption("💡 *I didn’t get the job. I built the platform that fixes the problem.*")
+        st.caption("💡 I didn’t get the job. I built the platform that fixes the problem.")
 
     st.markdown("---")
 
@@ -272,6 +272,7 @@ def login_ui():
                 st.success("✅ Account created. Check your email.")
             except Exception as e:
                 st.error(f"Signup failed: {e}")
+
 
 # --- ROUTING ---
 if st.session_state.supabase_user:
