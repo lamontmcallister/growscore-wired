@@ -226,52 +226,75 @@ def login_ui():
                 st.success("✅ Account created. Check your email.")
             except Exception as e:
                 st.error(f"Signup failed: {e}")
- # ------------------- Recruiter Dashboard -------------------
-    def recruiter_dashboard():
-        st.title("Recruiter Dashboard")
-        with st.sidebar.expander(" QoH Weight Sliders", expanded=True):
-            w_jd = st.slider("JD Match", 0, 100, 25)
-            w_ref = st.slider("References", 0, 100, 25)
-            w_beh = st.slider("Behavior", 0, 100, 25)
-            w_skill = st.slider("Skills", 0, 100, 25)
-    
-        total = w_jd + w_ref + w_beh + w_skill
-        if total == 0:
-            st.warning("Adjust sliders to view scores.")
-            return
-    
-        df = pd.DataFrame([
-            {"Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84, "Skill": 92,
-             "Gaps": "Strategic Planning", "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education,  HR"},
-            {"Candidate": "Jasmine", "JD Match": 82, "Reference": 78, "Behavior": 90, "Skill": 80,
-             "Gaps": "Leadership", "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"},
-            {"Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70, "Skill": 78,
-             "Gaps": "Communication", "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"}
-        ])
-    
-        selected = st.multiselect("Compare Candidates", df["Candidate"].tolist(), default=df["Candidate"].tolist())
-        filtered = df[df["Candidate"].isin(selected)].copy()
-    
-        filtered["QoH Score"] = (
-            filtered["JD Match"] * w_jd +
-            filtered["Reference"] * w_ref +
-            filtered["Behavior"] * w_beh +
-            filtered["Skill"] * w_skill
-        ) / total
-    
-        st.subheader("📋 Candidate Comparison Table")
-        st.dataframe(filtered)
-    
-        st.subheader(" AI Recommendations")
-        for _, row in filtered.iterrows():
-            if row["QoH Score"] >= 90:
-                st.success(f"{row['Candidate']}:  Strong hire. Green light.")
-            elif row["Reference"] < 75:
-                st.warning(f"{row['Candidate']}: ⚠️ Weak reference. Needs follow-up.")
-            elif row["Skill"] < 80:
-                st.info(f"{row['Candidate']}: Needs support in **{row['Gaps']}**.")
-            else:
-                st.write(f"{row['Candidate']}: Ready for interviews.")
+# ------------------- Recruiter Dashboard -------------------
+def recruiter_dashboard():
+    st.title("💼 Recruiter Dashboard")
+
+    with st.sidebar.expander("🎚 QoH Weight Sliders", expanded=True):
+        w_jd = st.slider("JD Match", 0, 100, 25)
+        w_ref = st.slider("References", 0, 100, 25)
+        w_beh = st.slider("Behavior", 0, 100, 25)
+        w_skill = st.slider("Skills", 0, 100, 25)
+
+    total = w_jd + w_ref + w_beh + w_skill
+    if total == 0:
+        st.warning("⚠️ Please adjust the sliders to view Quality of Hire scores.")
+        return
+
+    df = pd.DataFrame([
+        {
+            "Candidate": "Lamont",
+            "JD Match": 88,
+            "Reference": 90,
+            "Behavior": 84,
+            "Skill": 92,
+            "Gaps": "Strategic Planning",
+            "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education, ✅ HR"
+        },
+        {
+            "Candidate": "Jasmine",
+            "JD Match": 82,
+            "Reference": 78,
+            "Behavior": 90,
+            "Skill": 80,
+            "Gaps": "Leadership",
+            "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"
+        },
+        {
+            "Candidate": "Andre",
+            "JD Match": 75,
+            "Reference": 65,
+            "Behavior": 70,
+            "Skill": 78,
+            "Gaps": "Communication",
+            "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"
+        }
+    ])
+
+    selected = st.multiselect("👥 Compare Candidates", df["Candidate"].tolist(), default=df["Candidate"].tolist())
+    filtered = df[df["Candidate"].isin(selected)].copy()
+
+    filtered["QoH Score"] = (
+        filtered["JD Match"] * w_jd +
+        filtered["Reference"] * w_ref +
+        filtered["Behavior"] * w_beh +
+        filtered["Skill"] * w_skill
+    ) / total
+
+    st.subheader("📊 Candidate Comparison Table")
+    st.dataframe(filtered)
+
+    st.subheader("🤖 AI Recommendations")
+    for _, row in filtered.iterrows():
+        if row["QoH Score"] >= 90:
+            st.success(f"✅ {row['Candidate']}: Strong hire. Green light.")
+        elif row["Reference"] < 75:
+            st.warning(f"⚠️ {row['Candidate']}: Weak reference. Needs follow-up.")
+        elif row["Skill"] < 80:
+            st.info(f"ℹ️ {row['Candidate']}: Needs support in **{row['Gaps']}**.")
+        else:
+            st.write(f"{row['Candidate']}: Ready for interviews.")
+
     
 
     # 🧠 GPT-Backed Summary
