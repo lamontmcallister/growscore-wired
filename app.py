@@ -240,7 +240,6 @@ def recruiter_dashboard():
     st.markdown("---")
     st.subheader("🧠 AI Insight")
     st.success(f"⭐ Based on current weightings, **{top}** is the most aligned candidate for the role.")
-ate.")
 # --- LOGIN + SIGNUP + IMAGE ---
 def login_ui():
     st.markdown("##")
