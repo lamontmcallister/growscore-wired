@@ -293,21 +293,16 @@ def recruiter_dashboard():
     top = filtered.sort_values("QoH Score", ascending=False).iloc[0]["Candidate"]
 
     for _, row in filtered.iterrows():
+        gap = row["Gaps"] if "Gaps" in row and pd.notnull(row["Gaps"]) else "a key area"
         if row["QoH Score"] >= 90:
             st.success(f"✅ {row['Candidate']}: Strong hire. Green light.")
         elif row["Reference"] < 75:
             st.warning(f"⚠️ {row['Candidate']}: Weak reference. Needs follow-up.")
         elif row["Skill"] < 80:
-            st.info(f"ℹ️ {row['Candidate']}: Needs support in **{row['Gaps']}**.")
+            st.info(f"ℹ️ {row['Candidate']}: Needs support in **{gap}**.")
         else:
             st.write(f"{row['Candidate']}: Ready for interviews.")
-    
 
-    # 🧠 GPT-Backed Summary
-    top = candidates.iloc[0]["Name"]
-    st.markdown("---")
-    st.subheader("🧠 AI Insight")
-    st.success(f"⭐ Based on current weightings, **{top}** is the most aligned candidate for the role.")
 # --- ROUTING ---
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal:", ["Candidate", "Recruiter"])
