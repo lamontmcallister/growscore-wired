@@ -27,7 +27,7 @@ skills_pool = ["Python", "SQL", "Leadership", "Data Analysis", "Machine Learning
 
 # --- GPT HELPERS ---
 def extract_skills_from_resume(text):
-    prompt = f"Extract 5–10 professional skills from this resume:\\n{text}\\nReturn as a Python list."
+    prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -39,7 +39,7 @@ def extract_skills_from_resume(text):
         return ["Python", "SQL", "Excel"]
 
 def extract_contact_info(text):
-    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\\n\\n{text}"
+    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\n\n{text}"
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -51,10 +51,10 @@ def extract_contact_info(text):
         return {"name": "", "email": "", "title": ""}
 
 def match_resume_to_jds(resume_text, jd_texts):
-    prompt = f"Given this resume:\\n{resume_text}\\n\\nMatch semantically to the following JDs:\\n"
+    prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following JDs:\n"
     for i, jd in enumerate(jd_texts):
-        prompt += f"\\nJD {i+1}:\\n{jd}\\n"
-    prompt += "\\nReturn a list of match scores, e.g. [82, 76]"
+        prompt += f"\nJD {i+1}:\n{jd}\n"
+    prompt += "\nReturn a list of match scores, e.g. [82, 76]"
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -195,53 +195,6 @@ def candidate_journey():
 
         st.markdown(f"**Personalized Roadmap:**\n\n{roadmap}")
         st.success("🎉 Candidate Journey Complete!")
-# --- RECRUITER DASHBOARD (Enhanced UI) ---
-def recruiter_dashboard():
-    st.title("💼 Recruiter Dashboard")
-    st.sidebar.header("Adjust Scoring Weights")
-
-    # 🎚 Scoring Weights
-    w_qoh = st.sidebar.slider("Quality of Hire", 0, 100, 40)
-    w_jd = st.sidebar.slider("JD Match", 0, 100, 30)
-    w_behavior = st.sidebar.slider("Behavior", 0, 100, 20)
-    w_skills = st.sidebar.slider("Skills", 0, 100, 10)
-
-    # 📊 Candidate Scorecards
-    st.subheader("📋 Candidate Comparison")
-
-    candidates = pd.DataFrame([
-        {"Name": "Jamie", "QoH": 87, "JD Match": 82, "Behavior": 76, "Skills": 85},
-        {"Name": "Taylor", "QoH": 79, "JD Match": 77, "Behavior": 90, "Skills": 80}
-    ])
-
-    def calc_total(row):
-        return (
-            row["QoH"] * (w_qoh/100) +
-            row["JD Match"] * (w_jd/100) +
-            row["Behavior"] * (w_behavior/100) +
-            row["Skills"] * (w_skills/100)
-        )
-
-    candidates["Total Score"] = candidates.apply(calc_total, axis=1)
-    candidates = candidates.sort_values("Total Score", ascending=False)
-
-      col1, col2 = st.columns(2)
-    candidate_dicts = candidates.to_dict(orient="records")
-
-    for i, (col, row) in enumerate(zip([col1, col2], candidate_dicts)):
-        with col:
-            st.markdown(f"### 👤 {row['Name']}")
-            st.metric("Total Score", f"{round(row['Total Score'], 1)}")
-            st.markdown(f"- **QoH:** {row['QoH']}")
-            st.markdown(f"- **JD Match:** {row['JD Match']}")
-            st.markdown(f"- **Behavior:** {row['Behavior']}")
-            st.markdown(f"- **Skills:** {row['Skills']}")
-
-    # 🧠 GPT-Backed Summary
-    top = candidates.iloc[0]["Name"]
-    st.markdown("---")
-    st.subheader("🧠 AI Insight")
-    st.success(f"⭐ Based on current weightings, **{top}** is the most aligned candidate for the role.")
 # --- LOGIN + SIGNUP + IMAGE ---
 def login_ui():
     st.markdown("##")
@@ -273,8 +226,54 @@ def login_ui():
                 st.success("✅ Account created. Check your email.")
             except Exception as e:
                 st.error(f"Signup failed: {e}")
+# --- RECRUITER DASHBOARD (Enhanced UI) ---
+def recruiter_dashboard():
+    st.title("💼 Recruiter Dashboard")
+    st.sidebar.header("Adjust Scoring Weights")
 
+    # 🎚 Scoring Weights
+    w_qoh = st.sidebar.slider("Quality of Hire", 0, 100, 40)
+    w_jd = st.sidebar.slider("JD Match", 0, 100, 30)
+    w_behavior = st.sidebar.slider("Behavior", 0, 100, 20)
+    w_skills = st.sidebar.slider("Skills", 0, 100, 10)
 
+    # 📊 Candidate Scorecards
+    st.subheader("📋 Candidate Comparison")
+
+    candidates = pd.DataFrame([
+        {"Name": "Jamie", "QoH": 87, "JD Match": 82, "Behavior": 76, "Skills": 85},
+        {"Name": "Taylor", "QoH": 79, "JD Match": 77, "Behavior": 90, "Skills": 80}
+    ])
+
+    def calc_total(row):
+        return (
+            row["QoH"] * (w_qoh / 100) +
+            row["JD Match"] * (w_jd / 100) +
+            row["Behavior"] * (w_behavior / 100) +
+            row["Skills"] * (w_skills / 100)
+        )
+
+    candidates["Total Score"] = candidates.apply(calc_total, axis=1)
+    candidates = candidates.sort_values("Total Score", ascending=False)
+
+    # Display 2 side-by-side cards
+    col1, col2 = st.columns(2)
+    candidate_dicts = candidates.to_dict(orient="records")
+
+    for i, (col, row) in enumerate(zip([col1, col2], candidate_dicts)):
+        with col:
+            st.markdown(f"### 👤 {row['Name']}")
+            st.metric("Total Score", f"{round(row['Total Score'], 1)}")
+            st.markdown(f"- **QoH:** {row['QoH']}")
+            st.markdown(f"- **JD Match:** {row['JD Match']}")
+            st.markdown(f"- **Behavior:** {row['Behavior']}")
+            st.markdown(f"- **Skills:** {row['Skills']}")
+
+    # 🧠 GPT-Backed Summary
+    top = candidates.iloc[0]["Name"]
+    st.markdown("---")
+    st.subheader("🧠 AI Insight")
+    st.success(f"⭐ Based on current weightings, **{top}** is the most aligned candidate for the role.")
 # --- ROUTING ---
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal:", ["Candidate", "Recruiter"])
