@@ -225,8 +225,10 @@ def recruiter_dashboard():
     candidates["Total Score"] = candidates.apply(calc_total, axis=1)
     candidates = candidates.sort_values("Total Score", ascending=False)
 
-    col1, col2 = st.columns(2)
-       for i, (col, row) in enumerate(zip([col1, col2], candidates.to_dict(orient="records"))):
+      col1, col2 = st.columns(2)
+    candidate_dicts = candidates.to_dict(orient="records")
+
+    for i, (col, row) in enumerate(zip([col1, col2], candidate_dicts)):
         with col:
             st.markdown(f"### 👤 {row['Name']}")
             st.metric("Total Score", f"{round(row['Total Score'], 1)}")
