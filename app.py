@@ -16,7 +16,7 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# --- STYLE ---
+# --- CUSTOM STYLING ---
 def load_custom_css():
     st.markdown("""
         <style>
@@ -58,16 +58,21 @@ def load_custom_css():
 load_custom_css()
 
 # --- SESSION STATE ---
-for k in ["supabase_session", "supabase_user", "step"]:
+for k in ["supabase_session", "supabase_user", "step", "profiles", "active_profile"]:
     if k not in st.session_state:
-        st.session_state[k] = None if k != "step" else 0
+        if k == "step":
+            st.session_state[k] = 0
+        elif k == "profiles":
+            st.session_state[k] = {}
+        else:
+            st.session_state[k] = None
 
+# --- UTILS ---
 skills_pool = [
     "Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
     "Communication", "Strategic Planning", "Excel", "Project Management"
 ]
 
-# --- GPT HELPERS ---
 def extract_skills_from_resume(text):
     prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
     try:
@@ -107,13 +112,37 @@ def match_resume_to_jds(resume_text, jd_texts):
     except:
         return [np.random.randint(70, 90) for _ in jd_texts]
 
+def calculate_qoh_score(skill_count, ref, behav, jd_scores):
+    avg_jd = round(sum(jd_scores) / len(jd_scores), 1)
+    skills = skill_count * 5
+    final = round((skills + ref + behav + avg_jd) / 4, 1)
+    return final, {"Skills": skills, "References": ref, "Behavior": behav, "JD Match": avg_jd}
+
+# --- PROFILE SELECTOR ---
+def profile_selector():
+    st.markdown("### 👤 Select or Create a Candidate Profile")
+
+    profile_names = list(st.session_state.profiles.keys())
+    new_profile = st.text_input("New Profile Name")
+
+    if new_profile and st.button("Create Profile"):
+        st.session_state.profiles[new_profile] = {"progress": {}, "qoh": None}
+        st.session_state.active_profile = new_profile
+        st.success(f"Created and selected: {new_profile}")
+
+    if profile_names:
+        selected = st.selectbox("Or choose existing:", profile_names)
+        if st.button("Load Profile"):
+            st.session_state.active_profile = selected
+            st.success(f"Loaded profile: {selected}")
+
 # --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
 
-    st.title("Candidate Journey")
+    st.title("🚀 Candidate Journey")
     st.progress((step + 1) / 10)
 
     if step == 0:
@@ -140,7 +169,7 @@ def candidate_journey():
 
     elif step == 2:
         st.markdown("### 🧠 Step 3: Behavioral Survey")
-        st.caption("Choose how you respond in the workplace:")
+        st.caption("How do you show up at work?")
         behavior_questions = {
             "Meets deadlines consistently": None,
             "Collaborates well in teams": None,
@@ -161,28 +190,17 @@ def candidate_journey():
 
     elif step == 3:
         st.markdown("### 🤝 Step 4: References")
-        st.markdown("Provide up to 2 professional references and select traits to highlight:")
+        traits = ["Leadership", "Communication", "Reliability", "Strategic Thinking", "Teamwork",
+                  "Adaptability", "Problem Solving", "Empathy", "Initiative", "Collaboration"]
 
-        traits = [
-            "Leadership", "Communication", "Reliability", "Strategic Thinking", "Teamwork",
-            "Adaptability", "Problem Solving", "Empathy", "Initiative", "Collaboration"
-        ]
-
-        with st.expander("Reference 1"):
-            st.text_input("Name", key="ref1_name")
-            st.text_input("Email", key="ref1_email")
-            st.selectbox("Trait to Highlight", traits, key="ref1_trait")
-            st.text_area("Optional Message", key="ref1_msg")
-            if st.button("Send to Ref 1"):
-                st.success(f"Sent to {st.session_state.get('ref1_name')}")
-
-        with st.expander("Reference 2"):
-            st.text_input("Name", key="ref2_name")
-            st.text_input("Email", key="ref2_email")
-            st.selectbox("Trait to Highlight", traits, key="ref2_trait")
-            st.text_area("Optional Message", key="ref2_msg")
-            if st.button("Send to Ref 2"):
-                st.success(f"Sent to {st.session_state.get('ref2_name')}")
+        for i in range(1, 3):
+            with st.expander(f"Reference {i}"):
+                st.text_input("Name", key=f"ref{i}_name")
+                st.text_input("Email", key=f"ref{i}_email")
+                st.selectbox("Trait to Highlight", traits, key=f"ref{i}_trait")
+                st.text_area("Optional Message", key=f"ref{i}_msg")
+                if st.button(f"Send to Ref {i}"):
+                    st.success(f"Request sent to {st.session_state.get(f'ref{i}_name')}")
 
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
@@ -230,19 +248,22 @@ def candidate_journey():
     elif step == 8:
         st.markdown("### 📊 Step 9: Quality of Hire Score")
         jd_scores = st.session_state.get("jd_scores", [75, 80])
-        avg_jd = round(sum(jd_scores) / len(jd_scores), 1)
-        skills = len(st.session_state.get("selected_skills", [])) * 5
+        skill_count = len(st.session_state.get("selected_skills", []))
         behavior = st.session_state.get("behavior_score", 50)
         ref_score = 90
-        qoh = round((skills + ref_score + behavior + avg_jd) / 4, 1)
+        qoh, breakdown = calculate_qoh_score(skill_count, ref_score, behavior, jd_scores)
         st.metric("📈 QoH Score", f"{qoh}/100")
         st.session_state.qoh_score = qoh
+        st.session_state.profiles[st.session_state.active_profile]["qoh"] = qoh
+        st.session_state.profiles[st.session_state.active_profile]["progress"]["Quality of Hire"] = True
+        for k, v in breakdown.items():
+            st.write(f"**{k}**: {v}/100")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
     elif step == 9:
-        st.markdown("###  Career Growth Roadmap")
-        prompt = f"Based on this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap with:\n- 30-day\n- 60-day\n- 90-day\n- 6-month\n- 1-year plan."
+        st.markdown("### 🚀 Step 10: Growth Roadmap")
+        prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -251,10 +272,9 @@ def candidate_journey():
             )
             roadmap = response.choices[0].message.content.strip()
         except:
-            roadmap = "• 30-Day: Get started\n• 60-Day: Deliver a win\n• 90-Day: Lead an initiative\n• 6-Month: Strategic growth\n• 1-Year: Promotion ready"
-        st.markdown(f"**Your Roadmap:**\n\n{roadmap}")
-        st.success("🎉 Done!")
-
+            roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Prepare for promotion"
+        st.markdown(roadmap)
+        st.success("🎉 Complete!")
 
 # --- RECRUITER DASHBOARD ---
 def recruiter_dashboard():
@@ -314,21 +334,18 @@ def recruiter_dashboard():
 
     st.markdown("---")
     st.subheader("🔍 AI Recommendations")
-
     for _, row in df.iterrows():
         score = row["QoH Score"]
-        candidate = row["Candidate"]
-        gaps = row["Gaps"]
-
         if score >= 90:
-            st.success(f"✅ {candidate}: High-potential candidate. Strong hire.")
+            st.success(f"✅ {row['Candidate']}: Strong hire.")
         elif row["Reference"] < 75:
-            st.warning(f"⚠️ {candidate}: Weak reference — follow up needed.")
+            st.warning(f"⚠️ {row['Candidate']}: Weak reference.")
         elif row["Skill"] < 80:
-            st.info(f"ℹ️ {candidate}: Needs development in **{gaps}**.")
+            st.info(f"ℹ️ {row['Candidate']}: Gap in **{row['Gaps']}**.")
         else:
-            st.write(f"📌 {candidate}: Promising profile. Ready for interview.")
+            st.write(f"{row['Candidate']}: Interview-ready.")
 
+# --- LOGIN UI ---
 def login_ui():
     st.markdown("##")
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -358,16 +375,17 @@ def login_ui():
         elif mode == "Sign Up" and st.button("Register"):
             try:
                 supabase.auth.sign_up({"email": email, "password": password})
-                st.success("✅ Account created! Check your email for verification.")
+                st.success("✅ Account created! Check your email.")
             except Exception as e:
                 st.error(f"Signup failed: {e}")
-
 
 # --- ROUTING ---
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
     if view == "Candidate":
-        candidate_journey()
+        profile_selector()
+        if st.session_state.active_profile:
+            candidate_journey()
     else:
         recruiter_dashboard()
 else:
