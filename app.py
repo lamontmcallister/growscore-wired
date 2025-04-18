@@ -113,7 +113,7 @@ def candidate_journey():
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
 
-    st.title("🚀 Candidate Journey")
+    st.title("Candidate Journey")
     st.progress((step + 1) / 10)
 
     if step == 0:
@@ -241,7 +241,7 @@ def candidate_journey():
         st.button("Next", on_click=next_step)
 
     elif step == 9:
-        st.markdown("### 🚀 Career Growth Roadmap")
+        st.markdown("###  Career Growth Roadmap")
         prompt = f"Based on this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap with:\n- 30-day\n- 60-day\n- 90-day\n- 6-month\n- 1-year plan."
         try:
             response = openai.ChatCompletion.create(
