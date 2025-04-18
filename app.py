@@ -261,6 +261,41 @@ def recruiter_dashboard():
         else:
             st.write(f"{row['Candidate']}: Ready for interviews.")
 
+            # --- LOGIN + SIGNUP ---
+def login_ui():
+    st.markdown("##")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("YOUR_LOGO_OR_IMAGE_PATH.png", width=350)
+        st.markdown("### From Rejection to Revolution.")
+        st.caption("💡 I didn’t get the job. I built the platform that fixes the problem.")
+
+    st.markdown("---")
+
+    with st.sidebar:
+        st.header("🔐 Login / Sign Up")
+        mode = st.radio("Mode", ["Login", "Sign Up"])
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+
+        if mode == "Login" and st.button("Login"):
+            try:
+                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                st.session_state.supabase_user = res.user
+                st.session_state.supabase_session = res.session
+                st.success("✅ Logged in")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Login failed: {e}")
+
+        elif mode == "Sign Up" and st.button("Register"):
+            try:
+                supabase.auth.sign_up({"email": email, "password": password})
+                st.success("✅ Account created. Check your email.")
+            except Exception as e:
+                st.error(f"Signup failed: {e}")
+
+
 # --- ROUTING ---
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal:", ["Candidate", "Recruiter"])
@@ -269,4 +304,4 @@ if st.session_state.supabase_user:
     else:
         recruiter_dashboard()
 else:
-    st.markdown("### 🔐 Please log in from the homepage to start your journey.")
+     login_ui()
