@@ -188,7 +188,7 @@ def login_ui():
     st.markdown("##")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("Your_loss.PNG", width=350)
+       st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
         st.markdown("### From Rejection to Revolution")
         st.caption("💡 I didn’t get the job. I built the platform that fixes the problem.")
 
