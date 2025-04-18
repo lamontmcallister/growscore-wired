@@ -1,5 +1,3 @@
-# skippr_app_full_final.py
-
 import streamlit as st
 import openai
 import ast
@@ -9,7 +7,6 @@ import numpy as np
 from supabase import create_client, Client
 from datetime import datetime
 
-# --- CONFIG ---
 st.set_page_config(page_title="Skippr", layout="wide")
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -17,14 +14,12 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# --- SESSION STATE ---
 for k in ["supabase_session", "supabase_user", "step"]:
     if k not in st.session_state:
         st.session_state[k] = None if k != "step" else 0
 
 skills_pool = ["Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
                "Communication", "Strategic Planning", "Excel", "Project Management"]
-
 # --- GPT HELPERS ---
 def extract_skills_from_resume(text):
     prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
@@ -77,7 +72,8 @@ def plot_radar(jd_scores):
     ax.set_thetagrids(np.degrees(angles[:-1]), labels)
     ax.set_ylim(0, 100)
     st.pyplot(fig)
-# --- CANDIDATE JOURNEY (10 Steps) ---
+
+# --- CANDIDATE JOURNEY START ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
     def next_step(): st.session_state.step = step + 1
@@ -110,54 +106,78 @@ def candidate_journey():
 
     elif step == 2:
         st.subheader("🧠 Step 3: Behavior Survey")
-        opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
-        score_map = {opt: i + 1 for i, opt in enumerate(opts)}
-        q1 = st.radio("I meet deadlines", opts, index=2)
-        q2 = st.radio("I collaborate well", opts, index=2)
-        q3 = st.radio("I adapt to change", opts, index=2)
-        st.session_state.behavior_score = round((score_map[q1] + score_map[q2] + score_map[q3]) / 3 * 20, 1)
+        st.markdown("Rate yourself on the following work behaviors (1 = Strongly Disagree, 5 = Strongly Agree)")
+
+        behavior_traits = {
+            "Accountability": "I take full responsibility for my actions and outcomes.",
+            "Team Collaboration": "I work effectively with others in a team setting.",
+            "Adaptability": "I stay flexible and adjust quickly when things change.",
+            "Initiative": "I take action without waiting for direction.",
+            "Communication": "I express ideas clearly and listen to others.",
+            "Resilience": "I recover quickly from challenges and setbacks."
+        }
+
+        ratings = []
+        for trait, desc in behavior_traits.items():
+            st.markdown(f"**{trait}** – {desc}")
+            score = st.slider(f"How do you rate yourself in {trait.lower()}?", 1, 5, 3, key=trait)
+            ratings.append(score)
+
+        avg_behavior_score = round((sum(ratings) / len(ratings)) * 20, 1)
+        st.session_state.behavior_score = avg_behavior_score
+
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
-
     elif step == 3:
         st.subheader("🤝 Step 4: References")
-        st.text_input("Reference 1 Name")
-        st.text_input("Reference 1 Email")
-        st.text_input("Reference 2 Name")
-        st.text_input("Reference 2 Email")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.text_input("Reference 1 Name", key="ref1_name")
+            st.text_input("Reference 1 Email", key="ref1_email")
+            st.selectbox("Reference 1 – Trait to Highlight", 
+                         ["Integrity", "Collaboration", "Innovation", "Accountability", "Resilience"], 
+                         key="ref1_value")
+        with col2:
+            st.text_input("Reference 2 Name", key="ref2_name")
+            st.text_input("Reference 2 Email", key="ref2_email")
+            st.selectbox("Reference 2 – Trait to Highlight", 
+                         ["Integrity", "Collaboration", "Innovation", "Accountability", "Resilience"], 
+                         key="ref2_value")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
     elif step == 4:
         st.subheader("📣 Step 5: Backchannel")
-        st.text_input("Backchannel Name")
-        st.text_input("Backchannel Email")
-        st.text_area("Topic for Feedback")
+        st.text_input("Backchannel Name", key="back_name")
+        st.text_input("Backchannel Email", key="back_email")
+        st.selectbox("Which value should they speak to?", 
+                     ["Growth Mindset", "Team Impact", "Adaptability", "Leadership Under Pressure"], 
+                     key="back_value")
+        st.text_area("What would you like them to focus on?", key="feedback_topic")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
     elif step == 5:
         st.subheader("🎓 Step 6: Education")
-        st.text_input("Degree")
-        st.text_input("Major")
-        st.text_input("School")
-        st.text_input("Graduation Year")
+        st.text_input("Degree", key="edu_degree")
+        st.text_input("Major", key="edu_major")
+        st.text_input("School", key="edu_school")
+        st.text_input("Graduation Year", key="edu_grad_year")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
     elif step == 6:
         st.subheader("🏢 Step 7: HR Check")
-        st.text_input("Company")
-        st.text_input("Manager Name")
-        st.text_input("HR Email")
-        st.checkbox("I authorize verification")
+        st.text_input("Company", key="hr_company")
+        st.text_input("Manager Name", key="hr_manager")
+        st.text_input("HR Email", key="hr_email")
+        st.checkbox("I authorize verification", key="hr_auth")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
-
     elif step == 7:
         st.subheader("📄 Step 8: JD Matching")
-        jd1 = st.text_area("Paste JD 1")
-        jd2 = st.text_area("Paste JD 2")
+        jd1 = st.text_area("Paste JD 1", key="jd1")
+        jd2 = st.text_area("Paste JD 2", key="jd2")
         if jd1 and "resume_text" in st.session_state:
             scores = match_resume_to_jds(st.session_state.resume_text, [jd1, jd2])
             st.session_state.jd_scores = scores
@@ -182,7 +202,7 @@ def candidate_journey():
 
     elif step == 9:
         st.subheader("🚀 Step 10: Career Growth Roadmap")
-        prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nGenerate a growth roadmap for this candidate:\n- 30-day plan\n- 60-day plan\n- 90-day plan\n- 6-month vision\n- 1-year career trajectory"
+        prompt = f"Given this resume:\\n{st.session_state.get('resume_text', '')}\\n\\nGenerate a growth roadmap for this candidate:\\n- 30-day plan\\n- 60-day plan\\n- 90-day plan\\n- 6-month vision\\n- 1-year career trajectory"
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -191,46 +211,13 @@ def candidate_journey():
             )
             roadmap = response.choices[0].message.content.strip()
         except:
-            roadmap = "• 30-Day: Learn the product\n• 60-Day: Deliver first project\n• 90-Day: Lead team\n• 6-Month: Strategic roadmap\n• 1-Year: Sr. Leadership path"
-
-        st.markdown(f"**Personalized Roadmap:**\n\n{roadmap}")
+            roadmap = "• 30-Day: Learn the product\\n• 60-Day: Deliver first project\\n• 90-Day: Lead team\\n• 6-Month: Strategic roadmap\\n• 1-Year: Sr. Leadership path"
+        st.markdown(f"**Personalized Roadmap:**\\n\\n{roadmap}")
         st.success("🎉 Candidate Journey Complete!")
-# --- LOGIN + SIGNUP + IMAGE ---
-def login_ui():
-    st.markdown("##")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=400)
-        st.markdown("### From Rejection to Revolution.")
-        st.caption("💡 I didn’t get the job. I built the platform that fixes the problem.")
-
-    st.markdown("---")
-
-    with st.sidebar:
-        st.header("🔐 Login / Sign Up")
-        mode = st.radio("Mode", ["Login", "Sign Up"])
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        if mode == "Login" and st.button("Login"):
-            try:
-                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                st.session_state.supabase_user = res.user
-                st.session_state.supabase_session = res.session
-                st.success("✅ Logged in")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Login failed: {e}")
-        elif mode == "Sign Up" and st.button("Register"):
-            try:
-                supabase.auth.sign_up({"email": email, "password": password})
-                st.success("✅ Account created. Check your email.")
-            except Exception as e:
-                st.error(f"Signup failed: {e}")
-# ------------------- Recruiter Dashboard -------------------
+# --- RECRUITER DASHBOARD ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
-
-    with st.sidebar.expander("🎚 QoH Weight Sliders", expanded=True):
+    with st.sidebar.expander("🎚 Adjust QoH Weights", expanded=True):
         w_jd = st.slider("JD Match", 0, 100, 25)
         w_ref = st.slider("References", 0, 100, 25)
         w_beh = st.slider("Behavior", 0, 100, 25)
@@ -238,45 +225,20 @@ def recruiter_dashboard():
 
     total = w_jd + w_ref + w_beh + w_skill
     if total == 0:
-        st.warning("⚠️ Please adjust the sliders to view Quality of Hire scores.")
+        st.warning("Adjust sliders to view scores.")
         return
 
     df = pd.DataFrame([
-        {
-            "Candidate": "Lamont",
-            "JD Match": 88,
-            "Reference": 90,
-            "Behavior": 84,
-            "Skill": 92,
-            "Gaps": "Strategic Planning",
-            "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education, ✅ HR"
-        },
-        {
-            "Candidate": "Jasmine",
-            "JD Match": 82,
-            "Reference": 78,
-            "Behavior": 90,
-            "Skill": 80,
-            "Gaps": "Leadership",
-            "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"
-        },
-        {
-            "Candidate": "Andre",
-            "JD Match": 75,
-            "Reference": 65,
-            "Behavior": 70,
-            "Skill": 78,
-            "Gaps": "Communication",
-            "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"
-        }
+        {"Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84, "Skill": 92,
+         "Gaps": "Strategic Planning", "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education,  HR"},
+        {"Candidate": "Jasmine", "JD Match": 82, "Reference": 78, "Behavior": 90, "Skill": 80,
+         "Gaps": "Leadership", "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"},
+        {"Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70, "Skill": 78,
+         "Gaps": "Communication", "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"}
     ])
 
-    selected = st.multiselect("👥 Compare Candidates", df["Candidate"].tolist(), default=df["Candidate"].tolist())
+    selected = st.multiselect("Compare Candidates", df["Candidate"].tolist(), default=df["Candidate"].tolist())
     filtered = df[df["Candidate"].isin(selected)].copy()
-
-    if filtered.empty:
-        st.info("No candidates selected.")
-        return
 
     filtered["QoH Score"] = (
         filtered["JD Match"] * w_jd +
@@ -285,21 +247,17 @@ def recruiter_dashboard():
         filtered["Skill"] * w_skill
     ) / total
 
-    st.subheader("📊 Candidate Comparison Table")
-    st.dataframe(filtered)
+    st.subheader("📋 Candidate Comparison Table")
+    st.dataframe(filtered, use_container_width=True)
 
     st.subheader("🤖 AI Recommendations")
-
-    top = filtered.sort_values("QoH Score", ascending=False).iloc[0]["Candidate"]
-
     for _, row in filtered.iterrows():
-        gap = row["Gaps"] if "Gaps" in row and pd.notnull(row["Gaps"]) else "a key area"
         if row["QoH Score"] >= 90:
             st.success(f"✅ {row['Candidate']}: Strong hire. Green light.")
         elif row["Reference"] < 75:
             st.warning(f"⚠️ {row['Candidate']}: Weak reference. Needs follow-up.")
         elif row["Skill"] < 80:
-            st.info(f"ℹ️ {row['Candidate']}: Needs support in **{gap}**.")
+            st.info(f"ℹ️ {row['Candidate']}: Needs support in **{row['Gaps']}**.")
         else:
             st.write(f"{row['Candidate']}: Ready for interviews.")
 
@@ -311,4 +269,4 @@ if st.session_state.supabase_user:
     else:
         recruiter_dashboard()
 else:
-    login_ui()
+    st.markdown("### 🔐 Please log in from the homepage to start your journey.")
