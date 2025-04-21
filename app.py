@@ -16,7 +16,7 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# --- STYLE ---
+# --- CSS ---
 def load_custom_css():
     st.markdown("""
         <style>
@@ -24,102 +24,96 @@ def load_custom_css():
                 font-family: 'Segoe UI', sans-serif;
                 padding: 0rem !important;
             }
-            h1, h2, h3 {
-                font-weight: 600 !important;
-                margin-bottom: 0.5rem;
-            }
             div.stButton > button {
                 background-color: #ff6a00;
                 color: white;
-                border: none;
                 border-radius: 6px;
                 padding: 0.5rem 1.2rem;
                 font-weight: 600;
                 font-size: 1rem;
                 margin-top: 0.5rem;
-            }
-            .stSlider > div {
-                padding-top: 0.5rem;
-            }
-            section[data-testid="stSidebar"] {
-                background-color: #f9f4ef;
-                border-right: 1px solid #e1dfdb;
-            }
-            .markdown-block {
-                background-color: #f8f8f8;
-                padding: 1rem 1.5rem;
-                border-radius: 10px;
-                border: 1px solid #e0e0e0;
-                margin-bottom: 1rem;
+                border: none;
             }
         </style>
     """, unsafe_allow_html=True)
-
 load_custom_css()
-# --- SESSION STATE DEFAULTS ---
-for k in ["supabase_session", "supabase_user", "step", "active_profile"]:
+
+# --- SESSION SETUP ---
+for k in ["supabase_user", "supabase_session", "step", "active_profile_id"]:
     if k not in st.session_state:
-        st.session_state[k] = None if k not in ["step"] else 0
+        st.session_state[k] = None if k != "step" else 0
 
-# --- SUPABASE AUTH UI ---
-def login_ui():
-    st.markdown("##")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
-        st.markdown("### From Rejection to Revolution")
-        st.caption("💡 I didn’t get the job. I built the platform that fixes the problem.")
+skills_pool = [
+    "Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
+    "Communication", "Strategic Planning", "Excel", "Project Management"
+]
 
-    st.markdown("---")
-    with st.sidebar:
-        st.header("🔐 Log In or Create Account")
-        mode = st.radio("Choose Mode", ["Login", "Sign Up"])
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
+# --- GPT HELPERS ---
+def extract_skills_from_resume(text):
+    prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
+    try:
+        res = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        return ast.literal_eval(res.choices[0].message.content.strip())
+    except:
+        return ["Python", "SQL", "Excel"]
 
-        if mode == "Login" and st.button("Log In"):
-            try:
-                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                st.session_state.supabase_user = res.user
-                st.session_state.supabase_session = res.session
-                st.success("✅ Logged in successfully.")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Login failed: {e}")
+def extract_contact_info(text):
+    prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\n\n{text}"
+    try:
+        res = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+        return ast.literal_eval(res.choices[0].message.content.strip())
+    except:
+        return {"name": "", "email": "", "title": ""}
 
-        elif mode == "Sign Up" and st.button("Register"):
-            try:
-                supabase.auth.sign_up({"email": email, "password": password})
-                st.success("✅ Account created! Check your email for verification.")
-            except Exception as e:
-                st.error(f"Signup failed: {e}")
+def match_resume_to_jds(resume_text, jd_texts):
+    prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following JDs:\n"
+    for i, jd in enumerate(jd_texts):
+        prompt += f"\nJD {i+1}:\n{jd}\n"
+    prompt += "\nReturn a list of match scores, e.g. [82, 76]"
+    try:
+        res = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+        )
+        return ast.literal_eval(res.choices[0].message.content.strip())
+    except:
+        return [np.random.randint(70, 90) for _ in jd_texts]
 
-# --- PROFILE SELECTION ---
+# --- PROFILE HELPERS ---
+def load_profiles():
+    user_id = st.session_state.supabase_user.id
+    res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    return res.data if res.data else []
+
+def save_profile(profile_data):
+    profile_data["user_id"] = st.session_state.supabase_user.id
+    profile_data["timestamp"] = datetime.utcnow().isoformat()
+    supabase.table("profiles").insert(profile_data).execute()
+
 def profile_selector():
-    user = st.session_state.get("supabase_user")
-    if not user:
-        st.warning("You must log in first.")
-        return False
-
-    user_id = user.id if hasattr(user, "id") else user.get("id")
-    profiles = supabase.table("profiles").select("*").eq("user_id", user_id).execute().data
-    names = [p["profile_name"] for p in profiles]
-    default_name = names[0] if names else None
-
-    st.sidebar.markdown("### 👤 Select a Profile")
-    selected = st.sidebar.selectbox("Choose a profile to continue:", names + ["➕ Create New"], index=0 if default_name else len(names))
-
-    if selected == "➕ Create New":
-        new_name = st.sidebar.text_input("Enter name for new profile")
-        if st.sidebar.button("Create Profile") and new_name:
-            supabase.table("profiles").insert({"user_id": user_id, "profile_name": new_name}).execute()
-            st.session_state.active_profile = new_name
+    profiles = load_profiles()
+    profile_names = [p["name"] for p in profiles]
+    if not profiles:
+        st.session_state.active_profile_id = None
+        st.warning("No profiles found. Please create one to begin.")
+        name = st.text_input("Enter profile name:")
+        if st.button("Create Profile") and name:
+            new_profile = {"name": name}
+            res = supabase.table("profiles").insert({**new_profile, "user_id": st.session_state.supabase_user.id}).execute()
             st.rerun()
-        return False
-
-    if selected:
-        st.session_state.active_profile = selected
-        return True
+    else:
+        choice = st.selectbox("Choose a profile to continue:", profile_names)
+        st.session_state.active_profile_id = next((p["id"] for p in profiles if p["name"] == choice), None)
+# --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
     def next_step(): st.session_state.step = step + 1
@@ -152,7 +146,7 @@ def candidate_journey():
 
     elif step == 2:
         st.markdown("### 🧠 Step 3: Behavioral Survey")
-        st.caption("Tell us how you show up at work. Choose what best reflects you.")
+        st.caption("Tell us how you show up at work. Choose the statement that best reflects you for each trait.")
         behavior_questions = {
             "Meets deadlines consistently": None,
             "Collaborates well in teams": None,
@@ -173,34 +167,31 @@ def candidate_journey():
 
     elif step == 3:
         st.markdown("### 🤝 Step 4: References")
-        st.markdown("Send references and select traits you want them to highlight:")
-
         traits = [
             "Leadership", "Communication", "Reliability", "Strategic Thinking", "Teamwork",
             "Adaptability", "Problem Solving", "Empathy", "Initiative", "Collaboration"
         ]
-
-        with st.expander("Reference 1"):
+        with st.expander("Reference 1 Details"):
             st.text_input("Name", key="ref1_name")
             st.text_input("Email", key="ref1_email")
             st.selectbox("Trait to Highlight", traits, key="ref1_trait")
-            st.text_area("Message to Ref 1", key="ref1_msg")
-            if st.button("Send to Ref 1"):
-                st.success(f"✅ Sent to {st.session_state.get('ref1_name')}")
+            st.text_area("Message to Referee (optional)", key="ref1_msg")
+            if st.button("Send Request to Ref 1"):
+                st.success(f"Request sent to {st.session_state.get('ref1_name')}")
 
-        with st.expander("Reference 2"):
+        with st.expander("Reference 2 Details"):
             st.text_input("Name", key="ref2_name")
             st.text_input("Email", key="ref2_email")
             st.selectbox("Trait to Highlight", traits, key="ref2_trait")
-            st.text_area("Message to Ref 2", key="ref2_msg")
-            if st.button("Send to Ref 2"):
-                st.success(f"✅ Sent to {st.session_state.get('ref2_name')}")
+            st.text_area("Message to Referee (optional)", key="ref2_msg")
+            if st.button("Send Request to Ref 2"):
+                st.success(f"Request sent to {st.session_state.get('ref2_name')}")
 
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
     elif step == 4:
-        st.markdown("### 📣 Step 5: Backchannel (Optional)")
+        st.markdown("### 📣 Step 5: Backchannel Check (Optional)")
         st.text_input("Backchannel Contact Name")
         st.text_input("Backchannel Email")
         st.text_area("Message or Topic for Feedback")
@@ -208,7 +199,7 @@ def candidate_journey():
         st.button("Next", on_click=next_step)
 
     elif step == 5:
-        st.markdown("### 🎓 Step 6: Education")
+        st.markdown("### 🎓 Step 6: Education Background")
         st.text_input("Degree")
         st.text_input("Major")
         st.text_input("Institution")
@@ -218,21 +209,23 @@ def candidate_journey():
 
     elif step == 6:
         st.markdown("### 🏢 Step 7: HR Verification")
-        st.text_input("Company")
-        st.text_input("Manager Name")
+        st.text_input("Most Recent Company")
+        st.text_input("Manager's Name")
         st.text_input("HR Contact Email")
-        st.checkbox("✅ I authorize verification")
+        st.checkbox("I authorize verification with these contacts")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
     elif step == 7:
-        st.markdown("### 📄 Step 8: JD Matching & Skill Gaps")
-        jd1 = st.text_area("Paste Job Description 1")
-        jd2 = st.text_area("Paste Job Description 2")
+        st.markdown("### 📄 Step 8: JD Matching & Skills Gap")
+        jd1 = st.text_area("Paste Job Description 1", height=150)
+        jd2 = st.text_area("Paste Job Description 2", height=150)
 
         if jd1 and "resume_text" in st.session_state:
             scores = match_resume_to_jds(st.session_state.resume_text, [jd1, jd2])
             st.session_state.jd_scores = scores
+            st.success("✅ JD Matching Complete")
+
             for i, score in enumerate(scores):
                 st.markdown(f"**JD {i+1} Match Score:** {score}%")
 
@@ -241,20 +234,22 @@ def candidate_journey():
                 set([word for word in jd1.split() if word.istitle()]),
                 set([word for word in jd2.split() if word.istitle()])
             ]
+
+            st.markdown("### 🧩 Skills Gap")
             for i, jd_set in enumerate(jd_skills):
                 gaps = list(jd_set - candidate_skills)
-                st.markdown(f"**JD {i+1} Skill Gaps:**")
+                st.markdown(f"**JD {i+1} Gaps:**")
                 if gaps:
                     st.warning(", ".join(gaps))
                 else:
-                    st.success("You're aligned!")
+                    st.success("You're well aligned with this JD!")
 
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
     elif step == 8:
         st.markdown("### 📊 Step 9: Quality of Hire Summary")
-        jd_scores = st.session_state.get("jd_scores", [70, 85])
+        jd_scores = st.session_state.get("jd_scores", [70, 80])
         avg_jd = round(sum(jd_scores) / len(jd_scores), 1)
         skills = len(st.session_state.get("selected_skills", [])) * 5
         ref_score = 90
@@ -263,11 +258,11 @@ def candidate_journey():
         st.metric("📈 Quality of Hire (QoH)", f"{qoh}/100")
         st.session_state.qoh_score = qoh
         st.button("Back", on_click=prev_step)
-        st.button("Next: Roadmap", on_click=next_step)
+        st.button("Next", on_click=next_step)
 
     elif step == 9:
         st.markdown("### 🚀 Step 10: Career Growth Roadmap")
-        prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a roadmap:\n- 30-day\n- 60-day\n- 90-day\n- 6-month\n- 1-year plan."
+        prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nGenerate a growth roadmap for this candidate:\n- 30-day\n- 60-day\n- 90-day\n- 6-month\n- 1-year career trajectory"
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -276,13 +271,13 @@ def candidate_journey():
             )
             roadmap = response.choices[0].message.content.strip()
         except:
-            roadmap = "• 30-Day: Build relationships\n• 60-Day: Deliver impact\n• 90-Day: Lead something\n• 6-Month: Scale\n• 1-Year: Promote"
+            roadmap = "• 30-Day: Learn onboarding systems\n• 60-Day: Deliver project win\n• 90-Day: Lead a team initiative\n• 6-Month: Improve cross-functional impact\n• 1-Year: Prepare for leadership."
         st.markdown(f"**Your Growth Roadmap:**\n\n{roadmap}")
         st.success("🎉 Candidate Journey Complete!")
+
 # --- RECRUITER DASHBOARD ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
-
     with st.sidebar.expander("🎚 Adjust Quality of Hire Weights", expanded=True):
         w_jd = st.slider("JD Match", 0, 100, 25)
         w_ref = st.slider("References", 0, 100, 25)
@@ -337,59 +332,46 @@ def recruiter_dashboard():
 
     st.markdown("---")
     st.subheader("🔍 AI Recommendations")
-
     for _, row in df.iterrows():
-        score = row["QoH Score"]
-        candidate = row["Candidate"]
-        gaps = row["Gaps"]
-
-        if score >= 90:
-            st.success(f"✅ {candidate}: High-potential candidate. Strong hire.")
+        if row["QoH Score"] >= 90:
+            st.success(f"{row['Candidate']}: Strong hire. Green light.")
         elif row["Reference"] < 75:
-            st.warning(f"⚠️ {candidate}: Weak reference — follow up needed.")
+            st.warning(f"{row['Candidate']}: ⚠️ Weak reference. Needs follow-up.")
         elif row["Skill"] < 80:
-            st.info(f"ℹ️ {candidate}: Needs development in **{gaps}**.")
+            st.info(f"{row['Candidate']}: Needs support in **{row['Gaps']}**.")
         else:
-            st.write(f"📌 {candidate}: Promising profile. Ready for interview.")
+            st.write(f"{row['Candidate']}: Ready for interviews.")
 
-
-# --- LOGIN UI ---
+# --- LOGIN ---
 def login_ui():
     st.markdown("##")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
-        st.markdown("### From Rejection to Revolution")
-        st.caption("💡 I didn’t get the job. I built the platform that fixes the problem.")
+    st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
+    st.markdown("### From Rejection to Revolution")
+    st.caption("💡 I didn’t get the job. I built the platform that fixes the problem.")
 
     st.markdown("---")
+    st.sidebar.header("🔐 Log In or Create Account")
+    mode = st.sidebar.radio("Choose Mode", ["Login", "Sign Up"])
+    email = st.sidebar.text_input("Email")
+    password = st.sidebar.text_input("Password", type="password")
 
-    with st.sidebar:
-        st.header("🔐 Log In or Create Account")
-        mode = st.radio("Choose Mode", ["Login", "Sign Up"])
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-
-        if mode == "Login" and st.button("Log In"):
-            try:
-                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                st.session_state.supabase_user = res.user
-                st.session_state.supabase_session = res.session
-                st.success("✅ Logged in successfully.")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Login failed: {e}")
-
-        elif mode == "Sign Up" and st.button("Register"):
-            try:
-                supabase.auth.sign_up({"email": email, "password": password})
-                st.success("✅ Account created! Check your email for verification.")
-            except Exception as e:
-                st.error(f"Signup failed: {e}")
-
+    if mode == "Login" and st.sidebar.button("Log In"):
+        try:
+            res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            st.session_state.supabase_user = res.user
+            st.rerun()
+        except Exception as e:
+            st.error(f"Login failed: {e}")
+    elif mode == "Sign Up" and st.sidebar.button("Register"):
+        try:
+            supabase.auth.sign_up({"email": email, "password": password})
+            st.success("✅ Account created! Check your email for verification.")
+        except Exception as e:
+            st.error(f"Signup failed: {e}")
 
 # --- ROUTING ---
 if st.session_state.supabase_user:
+    profile_selector()
     view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
     if view == "Candidate":
         candidate_journey()
