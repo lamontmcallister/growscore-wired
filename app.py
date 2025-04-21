@@ -145,11 +145,6 @@ def profile_selector():
             st.session_state.active_profile = selected
             st.success(f"✅ Loaded profile: {choice}")
 
-    else:
-        selected = next((p for p in profiles if p["name"] == choice), None)
-        if selected:
-            st.session_state.active_profile = selected
-            st.success(f"✅ Loaded profile: {choice}")
 
 # --- CANDIDATE JOURNEY ---
 def candidate_journey():
