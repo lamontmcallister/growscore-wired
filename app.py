@@ -88,31 +88,44 @@ def match_resume_to_jds(resume_text, jd_texts):
     except:
         return [np.random.randint(70, 90) for _ in jd_texts]
 
-# --- PROFILE HELPERS ---
-def load_profiles():
-    user_id = st.session_state.supabase_user.id
-    res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
-    return res.data if res.data else []
+# --- PROFILE LOGIC ---
+def get_profiles(user_id):
+    try:
+        res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+        return res.data if res.data else []
+    except Exception as e:
+        st.error(f"Error loading profiles: {e}")
+        return []
 
-def save_profile(profile_data):
-    profile_data["user_id"] = st.session_state.supabase_user.id
-    profile_data["timestamp"] = datetime.utcnow().isoformat()
-    supabase.table("profiles").insert(profile_data).execute()
+def save_profile(user_id, profile_name):
+    try:
+        supabase.table("profiles").insert({"user_id": user_id, "name": profile_name}).execute()
+        st.success(f"Profile '{profile_name}' created!")
+    except Exception as e:
+        st.error(f"Failed to save profile: {e}")
 
 def profile_selector():
-    profiles = load_profiles()
+    if "profile_selected" in st.session_state and st.session_state.profile_selected:
+        return  # Already selected
+
+    user_id = st.session_state.supabase_user.id if hasattr(st.session_state.supabase_user, "id") else st.session_state.supabase_user["id"]
+    profiles = get_profiles(user_id)
     profile_names = [p["name"] for p in profiles]
-    if not profiles:
-        st.session_state.active_profile_id = None
-        st.warning("No profiles found. Please create one to begin.")
-        name = st.text_input("Enter profile name:")
-        if st.button("Create Profile") and name:
-            new_profile = {"name": name}
-            res = supabase.table("profiles").insert({**new_profile, "user_id": st.session_state.supabase_user.id}).execute()
-            st.rerun()
-    else:
-        choice = st.selectbox("Choose a profile to continue:", profile_names)
-        st.session_state.active_profile_id = next((p["id"] for p in profiles if p["name"] == choice), None)
+
+    with st.sidebar:
+        st.markdown("### 👤 Choose a Profile")
+        selected = st.selectbox("Pick your candidate profile", profile_names + ["➕ Create New"])
+        if selected == "➕ Create New":
+            new_name = st.text_input("Enter new profile name")
+            if st.button("Create Profile"):
+                if new_name:
+                    save_profile(user_id, new_name)
+                    st.session_state.profile_selected = new_name
+                    st.rerun()
+        else:
+            st.session_state.profile_selected = selected
+            st.success(f"Selected profile: {selected}")
+p["name"] == choice), None)
 # --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
