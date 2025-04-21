@@ -89,47 +89,42 @@ def match_resume_to_jds(resume_text, jd_texts):
         return [np.random.randint(70, 90) for _ in jd_texts]
 
 # --- PROFILE LOGIC ---
-def fetch_profiles(user_id):
-    res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
-    return res.data if res.data else []
-
-def create_new_profile(user_id, name):
-    res = supabase.table("profiles").insert({
+def save_profile(profile_id, name):
+    user_id = st.session_state.supabase_user.id
+    data = {
         "user_id": user_id,
         "name": name,
-        "created_at": datetime.now().isoformat()
-    }).execute()
-    return res.data[0] if res.data else None
-
-def save_profile(profile_id):
-    supabase.table("profiles").update({
         "resume_text": st.session_state.get("resume_text", ""),
         "selected_skills": st.session_state.get("selected_skills", []),
         "behavior_score": st.session_state.get("behavior_score", 0),
-        "reference_data": {
-            "ref1": {
-                "name": st.session_state.get("ref1_name"),
-                "email": st.session_state.get("ref1_email"),
-                "trait": st.session_state.get("ref1_trait"),
-                "message": st.session_state.get("ref1_msg"),
-            },
-            "ref2": {
-                "name": st.session_state.get("ref2_name"),
-                "email": st.session_state.get("ref2_email"),
-                "trait": st.session_state.get("ref2_trait"),
-                "message": st.session_state.get("ref2_msg"),
-            },
-        },
-        "education": {
-            "degree": st.session_state.get("degree"),
-            "major": st.session_state.get("major"),
-            "institution": st.session_state.get("institution"),
-            "graduation_year": st.session_state.get("graduation_year"),
-        },
         "qoh_score": st.session_state.get("qoh_score"),
         "jd_scores": st.session_state.get("jd_scores", []),
-        "growth_roadmap": st.session_state.get("growth_roadmap", "")
-    }).eq("id", profile_id).execute()
+        "growth_roadmap": st.session_state.get("growth_roadmap", ""),
+        "reference_data": {
+            "ref1": {
+                "name": st.session_state.get("ref1_name", ""),
+                "email": st.session_state.get("ref1_email", ""),
+                "trait": st.session_state.get("ref1_trait", ""),
+                "message": st.session_state.get("ref1_msg", "")
+            },
+            "ref2": {
+                "name": st.session_state.get("ref2_name", ""),
+                "email": st.session_state.get("ref2_email", ""),
+                "trait": st.session_state.get("ref2_trait", ""),
+                "message": st.session_state.get("ref2_msg", "")
+            }
+        },
+        "education": {
+            "degree": st.session_state.get("degree", ""),
+            "major": st.session_state.get("major", ""),
+            "institution": st.session_state.get("institution", ""),
+            "graduation_year": st.session_state.get("graduation_year", "")
+        }
+    }
+    if profile_id:
+        supabase.table("profiles").update(data).eq("id", profile_id).execute()
+    else:
+        supabase.table("profiles").insert(data).execute()
 
 def load_profile(profile_id):
     res = supabase.table("profiles").select("*").eq("id", profile_id).single().execute()
@@ -142,7 +137,7 @@ def load_profile(profile_id):
         st.session_state["jd_scores"] = data.get("jd_scores", [])
         st.session_state["growth_roadmap"] = data.get("growth_roadmap", "")
 
-        refs = data.get("reference_data", {})
+        refs = data.get("reference_data") or {}
         st.session_state["ref1_name"] = refs.get("ref1", {}).get("name", "")
         st.session_state["ref1_email"] = refs.get("ref1", {}).get("email", "")
         st.session_state["ref1_trait"] = refs.get("ref1", {}).get("trait", "")
@@ -152,37 +147,35 @@ def load_profile(profile_id):
         st.session_state["ref2_trait"] = refs.get("ref2", {}).get("trait", "")
         st.session_state["ref2_msg"] = refs.get("ref2", {}).get("message", "")
 
-        edu = data.get("education", {})
+        edu = data.get("education") or {}
         st.session_state["degree"] = edu.get("degree", "")
         st.session_state["major"] = edu.get("major", "")
         st.session_state["institution"] = edu.get("institution", "")
         st.session_state["graduation_year"] = edu.get("graduation_year", "")
 
+def get_user_profiles():
+    user_id = st.session_state.supabase_user.id
+    res = supabase.table("profiles").select("id, name").eq("user_id", user_id).execute()
+    return res.data or []
+
 def profile_selector():
-    if not st.session_state.get("supabase_user"):
-        return
+    st.markdown("### 👤 Choose a Profile to Continue")
+    profiles = get_user_profiles()
+    choices = [p["name"] for p in profiles] + ["➕ Create New Profile"]
+    choice = st.selectbox("Select Profile", choices, key="selected_profile_name")
 
-    user_id = st.session_state.supabase_user.id if hasattr(st.session_state.supabase_user, "id") else st.session_state.supabase_user["id"]
-    profiles = fetch_profiles(user_id)
-    names = [p["name"] for p in profiles]
-
-    st.markdown("### 🔁 Choose a Profile or Create New")
-    choice = st.selectbox("Your Profiles", names + ["➕ Create New..."], key="profile_choice")
-
-    if choice == "➕ Create New...":
-        new_name = st.text_input("Name for New Profile", key="new_profile_name")
-        if st.button("Create Profile"):
-            new_profile = create_new_profile(user_id, new_name)
-            if new_profile:
-                st.session_state.active_profile = new_profile
-                st.session_state.step = 0
-                st.success(f"✅ Created and switched to: {new_name}")
-                st.experimental_rerun()
+    if choice == "➕ Create New Profile":
+        new_name = st.text_input("Enter profile name")
+        if st.button("Create Profile") and new_name:
+            save_profile(None, new_name)
+            st.success("Profile created. Please reload to select.")
+            st.rerun()
     else:
         selected_profile = next((p for p in profiles if p["name"] == choice), None)
         if selected_profile:
-            st.session_state.active_profile = selected_profile
+            st.session_state["selected_profile_id"] = selected_profile["id"]
             load_profile(selected_profile["id"])
+
 
 
 # --- CANDIDATE JOURNEY ---
