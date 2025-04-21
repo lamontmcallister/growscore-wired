@@ -341,10 +341,11 @@ def recruiter_dashboard():
             st.info(f"{row['Candidate']}: Good fit. Ready for next steps.")
 
 # --- ROUTING ---
-if st.session_state.supabase_user:
-    if not st.session_state.profile_id:
+if st.session_state.supabase_user is not None:
+    # Only fetch profile after login
+    if st.session_state.profile_id is None:
         profile_selector()
-    elif st.session_state.profile_id:
+    else:
         view = st.sidebar.radio("Portal", ["Candidate", "Recruiter"])
         if view == "Candidate":
             candidate_journey()
@@ -352,3 +353,4 @@ if st.session_state.supabase_user:
             recruiter_dashboard()
 else:
     login_ui()
+
