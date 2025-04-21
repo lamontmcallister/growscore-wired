@@ -105,27 +105,52 @@ def save_profile(user_id, profile_name):
         st.error(f"Failed to save profile: {e}")
 
 def profile_selector():
-    if "profile_selected" in st.session_state and st.session_state.profile_selected:
-        return  # Already selected
+    st.markdown("### 👤 Select or Create a Profile")
 
-    user_id = st.session_state.supabase_user.id if hasattr(st.session_state.supabase_user, "id") else st.session_state.supabase_user["id"]
-    profiles = get_profiles(user_id)
+    user = st.session_state.get("supabase_user")
+    if not user:
+        st.error("Please log in first.")
+        return
+
+    user_id = user.id if hasattr(user, "id") else user.get("id")
+
+    # Fetch existing profiles for the user
+    try:
+        res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+        profiles = res.data if res.data else []
+    except Exception as e:
+        st.error(f"Error fetching profiles: {e}")
+        return
+
     profile_names = [p["name"] for p in profiles]
+    choice = st.selectbox("Choose a profile", ["Create New"] + profile_names)
 
-    with st.sidebar:
-        st.markdown("### 👤 Choose a Profile")
-        selected = st.selectbox("Pick your candidate profile", profile_names + ["➕ Create New"])
-        if selected == "➕ Create New":
-            new_name = st.text_input("Enter new profile name")
-            if st.button("Create Profile"):
-                if new_name:
-                    save_profile(user_id, new_name)
-                    st.session_state.profile_selected = new_name
-                    st.rerun()
-        else:
-            st.session_state.profile_selected = selected
-            st.success(f"Selected profile: {selected}")
-p["name"] == choice), None)
+    if choice == "Create New":
+        new_name = st.text_input("Enter name for new profile")
+        if st.button("Create Profile") and new_name:
+            try:
+                new_profile = {
+                    "user_id": user_id,
+                    "name": new_name,
+                    "created_at": datetime.utcnow().isoformat()
+                }
+                supabase.table("profiles").insert(new_profile).execute()
+                st.success("✅ New profile created!")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"Failed to create profile: {e}")
+    else:
+        selected = next((p for p in profiles if p["name"] == choice), None)
+        if selected:
+            st.session_state.active_profile = selected
+            st.success(f"✅ Loaded profile: {choice}")
+
+    else:
+        selected = next((p for p in profiles if p["name"] == choice), None)
+        if selected:
+            st.session_state.active_profile = selected
+            st.success(f"✅ Loaded profile: {choice}")
+
 # --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
