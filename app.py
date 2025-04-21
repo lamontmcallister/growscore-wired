@@ -89,61 +89,100 @@ def match_resume_to_jds(resume_text, jd_texts):
         return [np.random.randint(70, 90) for _ in jd_texts]
 
 # --- PROFILE LOGIC ---
-def get_profiles(user_id):
-    try:
-        res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
-        return res.data if res.data else []
-    except Exception as e:
-        st.error(f"Error loading profiles: {e}")
-        return []
+def fetch_profiles(user_id):
+    res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    return res.data if res.data else []
 
-def save_profile(user_id, profile_name):
-    try:
-        supabase.table("profiles").insert({"user_id": user_id, "name": profile_name}).execute()
-        st.success(f"Profile '{profile_name}' created!")
-    except Exception as e:
-        st.error(f"Failed to save profile: {e}")
+def create_new_profile(user_id, name):
+    res = supabase.table("profiles").insert({
+        "user_id": user_id,
+        "name": name,
+        "created_at": datetime.now().isoformat()
+    }).execute()
+    return res.data[0] if res.data else None
+
+def save_profile(profile_id):
+    supabase.table("profiles").update({
+        "resume_text": st.session_state.get("resume_text", ""),
+        "selected_skills": st.session_state.get("selected_skills", []),
+        "behavior_score": st.session_state.get("behavior_score", 0),
+        "reference_data": {
+            "ref1": {
+                "name": st.session_state.get("ref1_name"),
+                "email": st.session_state.get("ref1_email"),
+                "trait": st.session_state.get("ref1_trait"),
+                "message": st.session_state.get("ref1_msg"),
+            },
+            "ref2": {
+                "name": st.session_state.get("ref2_name"),
+                "email": st.session_state.get("ref2_email"),
+                "trait": st.session_state.get("ref2_trait"),
+                "message": st.session_state.get("ref2_msg"),
+            },
+        },
+        "education": {
+            "degree": st.session_state.get("degree"),
+            "major": st.session_state.get("major"),
+            "institution": st.session_state.get("institution"),
+            "graduation_year": st.session_state.get("graduation_year"),
+        },
+        "qoh_score": st.session_state.get("qoh_score"),
+        "jd_scores": st.session_state.get("jd_scores", []),
+        "growth_roadmap": st.session_state.get("growth_roadmap", "")
+    }).eq("id", profile_id).execute()
+
+def load_profile(profile_id):
+    res = supabase.table("profiles").select("*").eq("id", profile_id).single().execute()
+    if res.data:
+        data = res.data
+        st.session_state["resume_text"] = data.get("resume_text", "")
+        st.session_state["selected_skills"] = data.get("selected_skills", [])
+        st.session_state["behavior_score"] = data.get("behavior_score", 0)
+        st.session_state["qoh_score"] = data.get("qoh_score")
+        st.session_state["jd_scores"] = data.get("jd_scores", [])
+        st.session_state["growth_roadmap"] = data.get("growth_roadmap", "")
+
+        refs = data.get("reference_data", {})
+        st.session_state["ref1_name"] = refs.get("ref1", {}).get("name", "")
+        st.session_state["ref1_email"] = refs.get("ref1", {}).get("email", "")
+        st.session_state["ref1_trait"] = refs.get("ref1", {}).get("trait", "")
+        st.session_state["ref1_msg"] = refs.get("ref1", {}).get("message", "")
+        st.session_state["ref2_name"] = refs.get("ref2", {}).get("name", "")
+        st.session_state["ref2_email"] = refs.get("ref2", {}).get("email", "")
+        st.session_state["ref2_trait"] = refs.get("ref2", {}).get("trait", "")
+        st.session_state["ref2_msg"] = refs.get("ref2", {}).get("message", "")
+
+        edu = data.get("education", {})
+        st.session_state["degree"] = edu.get("degree", "")
+        st.session_state["major"] = edu.get("major", "")
+        st.session_state["institution"] = edu.get("institution", "")
+        st.session_state["graduation_year"] = edu.get("graduation_year", "")
 
 def profile_selector():
-    st.markdown("### 👤 Select or Create a Profile")
-
-    user = st.session_state.get("supabase_user")
-    if not user:
-        st.error("Please log in first.")
+    if not st.session_state.get("supabase_user"):
         return
 
-    user_id = user.id if hasattr(user, "id") else user.get("id")
+    user_id = st.session_state.supabase_user.id if hasattr(st.session_state.supabase_user, "id") else st.session_state.supabase_user["id"]
+    profiles = fetch_profiles(user_id)
+    names = [p["name"] for p in profiles]
 
-    # Fetch existing profiles for the user
-    try:
-        res = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
-        profiles = res.data if res.data else []
-    except Exception as e:
-        st.error(f"Error fetching profiles: {e}")
-        return
+    st.markdown("### 🔁 Choose a Profile or Create New")
+    choice = st.selectbox("Your Profiles", names + ["➕ Create New..."], key="profile_choice")
 
-    profile_names = [p["name"] for p in profiles]
-    choice = st.selectbox("Choose a profile", ["Create New"] + profile_names)
-
-    if choice == "Create New":
-        new_name = st.text_input("Enter name for new profile")
-        if st.button("Create Profile") and new_name:
-            try:
-                new_profile = {
-                    "user_id": user_id,
-                    "name": new_name,
-                    "created_at": datetime.utcnow().isoformat()
-                }
-                supabase.table("profiles").insert(new_profile).execute()
-                st.success("✅ New profile created!")
+    if choice == "➕ Create New...":
+        new_name = st.text_input("Name for New Profile", key="new_profile_name")
+        if st.button("Create Profile"):
+            new_profile = create_new_profile(user_id, new_name)
+            if new_profile:
+                st.session_state.active_profile = new_profile
+                st.session_state.step = 0
+                st.success(f"✅ Created and switched to: {new_name}")
                 st.experimental_rerun()
-            except Exception as e:
-                st.error(f"Failed to create profile: {e}")
     else:
-        selected = next((p for p in profiles if p["name"] == choice), None)
-        if selected:
-            st.session_state.active_profile = selected
-            st.success(f"✅ Loaded profile: {choice}")
+        selected_profile = next((p for p in profiles if p["name"] == choice), None)
+        if selected_profile:
+            st.session_state.active_profile = selected_profile
+            load_profile(selected_profile["id"])
 
 
 # --- CANDIDATE JOURNEY ---
