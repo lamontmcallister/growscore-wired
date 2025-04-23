@@ -1,8 +1,7 @@
 streamlit
 openai
-supabase
-tiktoken
-python-dotenv
 pdfplumber
+pandas
+numpy
 matplotlib
-scikit-learn
+supabase
