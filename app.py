@@ -16,7 +16,7 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# --- STYLING ---
+# --- STYLE ---
 def load_custom_css():
     st.markdown("""
         <style>
@@ -38,41 +38,21 @@ def load_custom_css():
                 font-size: 1rem;
                 margin-top: 0.5rem;
             }
-            section[data-testid="stSidebar"] {
-                background-color: #f9f4ef;
-                border-right: 1px solid #e1dfdb;
-            }
         </style>
     """, unsafe_allow_html=True)
 
 load_custom_css()
 
 # --- SESSION STATE ---
-for k in ["supabase_session", "supabase_user", "step", "profiles", "active_profile_id"]:
+for k in ["supabase_session", "supabase_user", "step", "profile_id", "profile_data"]:
     if k not in st.session_state:
-        st.session_state[k] = 0 if k == "step" else None
+        st.session_state[k] = None if k not in ["step", "profile_data"] else (0 if k == "step" else {})
 
-# --- SUPABASE PROFILE HELPERS ---
-def fetch_profiles(user_email):
-    res = supabase.table("user_profiles").select("*").eq("user_email", user_email).execute()
-    if res.data:
-        return res.data
-    return []
-
-def save_profile_to_db(profile_id, data):
-    supabase.table("user_profiles").update({"data": data}).eq("id", profile_id).execute()
-
-def create_profile_in_db(user_email, name):
-    new_profile = supabase.table("user_profiles").insert({
-        "user_email": user_email,
-        "name": name,
-        "data": {}
-    }).execute()
-    return new_profile.data[0] if new_profile.data else None
-
-# --- SKILLS / GPT HELPERS ---
-skills_pool = ["Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
-               "Communication", "Strategic Planning", "Excel", "Project Management"]
+# --- UTILS ---
+skills_pool = [
+    "Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
+    "Communication", "Strategic Planning", "Excel", "Project Management"
+]
 
 def extract_skills_from_resume(text):
     prompt = f"Extract 5–10 professional skills from this resume:\n{text}\nReturn as a Python list."
@@ -113,56 +93,82 @@ def match_resume_to_jds(resume_text, jd_texts):
     except:
         return [np.random.randint(70, 90) for _ in jd_texts]
 
-# --- PROFILE SELECTOR ---
-def profile_selector(user_email):
-    st.markdown("### 👤 Select or Create a Candidate Profile")
-    profiles = fetch_profiles(user_email)
+def calculate_qoh_score(skill_count, ref, behav, jd_scores):
+    avg_jd = round(sum(jd_scores) / len(jd_scores), 1)
+    skills = skill_count * 5
+    final = round((skills + ref + behav + avg_jd) / 4, 1)
+    return final
+
+# --- PROFILE HANDLING ---
+def load_profile_from_db():
+    email = st.session_state.supabase_user["email"]
+    profiles = supabase.table("profiles").select("*").eq("user_email", email).execute().data
     profile_names = [p["name"] for p in profiles]
+    return profiles, profile_names
 
-    if profile_names:
-        selected = st.selectbox("Choose a Profile", profile_names)
-        if st.button("Load Selected Profile"):
-            selected_profile = next((p for p in profiles if p["name"] == selected), None)
-            st.session_state.active_profile_id = selected_profile["id"]
+def save_profile_to_db():
+    if st.session_state.profile_id:
+        supabase.table("profiles").update({"data": st.session_state.profile_data}).eq("id", st.session_state.profile_id).execute()
+    else:
+        res = supabase.table("profiles").insert({
+            "user_email": st.session_state.supabase_user["email"],
+            "name": st.session_state.profile_data.get("name", f"Profile {datetime.now().isoformat()}"),
+            "data": st.session_state.profile_data
+        }).execute()
+        st.session_state.profile_id = res.data[0]["id"]
+
+# --- PROFILE SELECTION UI ---
+def profile_selector():
+    profiles, names = load_profile_from_db()
+    st.markdown("### 👤 Select or Create Profile")
+    if names:
+        selected = st.selectbox("Choose existing profile", names)
+        if st.button("Load Profile"):
+            selected_profile = next(p for p in profiles if p["name"] == selected)
+            st.session_state.profile_id = selected_profile["id"]
             st.session_state.profile_data = selected_profile["data"]
-            st.success(f"Profile '{selected}' loaded!")
-
-    new_profile_name = st.text_input("Or Create New Profile")
-    if new_profile_name and st.button("Create New Profile"):
-        new_profile = create_profile_in_db(user_email, new_profile_name)
-        if new_profile:
-            st.session_state.active_profile_id = new_profile["id"]
-            st.session_state.profile_data = new_profile["data"]
-            st.success(f"Created new profile: {new_profile_name}")
-
-# --- CANDIDATE JOURNEY (Steps 0-5) ---
+            st.success(f"Loaded profile: {selected}")
+            st.experimental_rerun()
+    new_profile = st.text_input("Or enter new profile name")
+    if st.button("Create New Profile") and new_profile:
+        st.session_state.profile_data = {"name": new_profile}
+        save_profile_to_db()
+        st.success(f"Created and loaded new profile: {new_profile}")
+        st.experimental_rerun()
+# --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
-    def next_step(): st.session_state.step = step + 1
-    def prev_step(): st.session_state.step = max(0, step - 1)
+    def next_step(): 
+        save_profile_to_db()
+        st.session_state.step = step + 1
+    def prev_step(): 
+        save_profile_to_db()
+        st.session_state.step = max(0, step - 1)
 
     st.title("🚀 Candidate Journey")
     st.progress((step + 1) / 10)
 
+    profile = st.session_state.profile_data
+
     if step == 0:
         st.markdown("### 📝 Step 1: Resume Upload + Contact Info")
-        st.text_input("Full Name", key="cand_name")
-        st.text_input("Email", key="cand_email")
-        st.text_input("Target Job Title", key="cand_title")
+        profile["cand_name"] = st.text_input("Full Name", value=profile.get("cand_name", ""))
+        profile["cand_email"] = st.text_input("Email", value=profile.get("cand_email", ""))
+        profile["cand_title"] = st.text_input("Target Job Title", value=profile.get("cand_title", ""))
         uploaded = st.file_uploader("Upload Resume (PDF/TXT)", type=["pdf", "txt"])
         if uploaded:
             text = uploaded.read().decode("utf-8") if uploaded.type == "text/plain" else \
                 "\n".join([p.extract_text() for p in pdfplumber.open(uploaded).pages if p.extract_text()])
-            st.session_state.resume_text = text
-            st.session_state.resume_skills = extract_skills_from_resume(text)
-            st.session_state["resume_contact"] = extract_contact_info(text)
+            profile["resume_text"] = text
+            profile["resume_skills"] = extract_skills_from_resume(text)
+            profile["resume_contact"] = extract_contact_info(text)
             st.success("✅ Resume parsed.")
         st.button("Next", on_click=next_step)
 
     elif step == 1:
         st.markdown("### 📋 Step 2: Select Your Skills")
-        selected = st.multiselect("Choose your strongest skills:", skills_pool, default=st.session_state.get("resume_skills", []))
-        st.session_state.selected_skills = selected
+        selected = st.multiselect("Choose your strongest skills:", skills_pool, default=profile.get("resume_skills", []))
+        profile["selected_skills"] = selected
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
@@ -183,28 +189,103 @@ def candidate_journey():
             response = st.radio(question, opts, index=2, key=f"behavior_{i}")
             score_total += score_map[response]
         behavior_score = round((score_total / (len(behavior_questions) * 5)) * 100, 1)
-        st.session_state.behavior_score = behavior_score
+        profile["behavior_score"] = behavior_score
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    # --- SAVE DATA TO SUPABASE ---
-    if st.session_state.active_profile_id:
-        profile_data = {
-            "resume_text": st.session_state.get("resume_text", ""),
-            "selected_skills": st.session_state.get("selected_skills", []),
-            "behavior_score": st.session_state.get("behavior_score", 0),
-            "resume_contact": st.session_state.get("resume_contact", {})
-        }
-        save_profile_to_db(st.session_state.active_profile_id, profile_data)
+    elif step == 3:
+        st.markdown("### 🤝 Step 4: References")
+        traits = ["Leadership", "Communication", "Reliability", "Strategic Thinking", "Teamwork",
+                  "Adaptability", "Problem Solving", "Empathy", "Initiative", "Collaboration"]
+
+        for i in range(1, 3):
+            with st.expander(f"Reference {i}"):
+                profile[f"ref{i}_name"] = st.text_input("Name", value=profile.get(f"ref{i}_name", ""), key=f"ref{i}_name")
+                profile[f"ref{i}_email"] = st.text_input("Email", value=profile.get(f"ref{i}_email", ""), key=f"ref{i}_email")
+                profile[f"ref{i}_trait"] = st.selectbox("Trait to Highlight", traits, index=0, key=f"ref{i}_trait")
+                profile[f"ref{i}_msg"] = st.text_area("Optional Message", value=profile.get(f"ref{i}_msg", ""), key=f"ref{i}_msg")
+                if st.button(f"Send to Ref {i}"):
+                    st.success(f"Request sent to {profile.get(f'ref{i}_name')}")
+
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 4:
+        st.markdown("### 📣 Step 5: Backchannel (Optional)")
+        profile["bc_name"] = st.text_input("Name", value=profile.get("bc_name", ""))
+        profile["bc_email"] = st.text_input("Email", value=profile.get("bc_email", ""))
+        profile["bc_msg"] = st.text_area("Message or Topic for Feedback", value=profile.get("bc_msg", ""))
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 5:
+        st.markdown("### 🎓 Step 6: Education")
+        profile["degree"] = st.text_input("Degree", value=profile.get("degree", ""))
+        profile["major"] = st.text_input("Major", value=profile.get("major", ""))
+        profile["institution"] = st.text_input("Institution", value=profile.get("institution", ""))
+        profile["grad_year"] = st.text_input("Graduation Year", value=profile.get("grad_year", ""))
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 6:
+        st.markdown("### 🏢 Step 7: HR Check")
+        profile["company"] = st.text_input("Company", value=profile.get("company", ""))
+        profile["manager"] = st.text_input("Manager", value=profile.get("manager", ""))
+        profile["hr_email"] = st.text_input("HR Email", value=profile.get("hr_email", ""))
+        profile["hr_auth"] = st.checkbox("I authorize verification", value=profile.get("hr_auth", False))
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 7:
+        st.markdown("### 📄 Step 8: Job Matching")
+        jd1 = st.text_area("Paste JD 1", value=profile.get("jd1", ""))
+        jd2 = st.text_area("Paste JD 2", value=profile.get("jd2", ""))
+        profile["jd1"] = jd1
+        profile["jd2"] = jd2
+
+        if jd1 and profile.get("resume_text"):
+            scores = match_resume_to_jds(profile["resume_text"], [jd1, jd2])
+            profile["jd_scores"] = scores
+            for i, score in enumerate(scores):
+                st.markdown(f"**JD {i+1} Match Score:** {score}%")
+
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 8:
+        st.markdown("### 📊 Step 9: Quality of Hire Score")
+        jd_scores = profile.get("jd_scores", [75, 80])
+        skill_count = len(profile.get("selected_skills", []))
+        behavior = profile.get("behavior_score", 50)
+        ref_score = 90
+        qoh = calculate_qoh_score(skill_count, ref_score, behavior, jd_scores)
+        profile["qoh_score"] = qoh
+        st.metric("📈 QoH Score", f"{qoh}/100")
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 9:
+        st.markdown("### 🚀 Step 10: Growth Roadmap")
+        prompt = f"Given this resume:\n{profile.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            roadmap = response.choices[0].message.content.strip()
+        except:
+            roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Promotion Ready"
+        profile["growth_roadmap"] = roadmap
+        st.markdown(roadmap)
+        st.success("🎉 Complete!")
+        save_profile_to_db()
 
 # --- ROUTING ---
 if st.session_state.supabase_user:
-    user_email = st.session_state.supabase_user.email
-    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
-    if view == "Candidate":
-        if not st.session_state.active_profile_id:
-            profile_selector(user_email)
-        else:
-            candidate_journey()
+    if not st.session_state.profile_id:
+        profile_selector()
+    else:
+        candidate_journey()
 else:
-    st.markdown("### Please log in to continue.")
+    st.write("Please log in.")
