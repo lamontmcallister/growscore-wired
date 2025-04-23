@@ -99,108 +99,119 @@ def match_resume_to_jds(resume_text, jd_texts):
         return ast.literal_eval(res.choices[0].message.content.strip())
     except:
         return [np.random.randint(70, 90) for _ in jd_texts]
-# --- CANDIDATE JOURNEY ---
-def candidate_journey():
-    step = st.session_state.get("step", 0)
-    def next_step(): st.session_state.step = step + 1
-    def prev_step(): st.session_state.step = max(0, step - 1)
+# --- LOGIN UI ---
+def login_ui():
+    st.markdown("##")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
+        st.markdown("### Empowering Talent. Elevating Potential.")
+        st.caption("💡 Skippr aligns skills, provides growth, and puts you in front of real decision-makers.")
 
-    st.title("🚀 Candidate Journey")
-    st.progress((step + 1) / 10)
+    st.markdown("---")
 
-    if step == 0:
-        st.markdown("### 📝 Step 1: Resume Upload + Contact Info")
-        st.text_input("Full Name", key="cand_name")
-        st.text_input("Email", key="cand_email")
-        st.text_input("Target Job Title", key="cand_title")
-        uploaded = st.file_uploader("Upload Resume (PDF/TXT)", type=["pdf", "txt"])
-        if uploaded:
-            text = uploaded.read().decode("utf-8") if uploaded.type == "text/plain" else \
-                "\n".join([p.extract_text() for p in pdfplumber.open(uploaded).pages if p.extract_text()])
-            st.session_state.resume_text = text
-            st.session_state.resume_skills = extract_skills_from_resume(text)
-            st.session_state["resume_contact"] = extract_contact_info(text)
-            st.success("✅ Resume parsed.")
-        st.button("Next", on_click=next_step)
+    with st.sidebar:
+        st.header("🔐 Log In or Create Account")
+        mode = st.radio("Choose Mode", ["Login", "Sign Up"])
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
 
-    elif step == 1:
-        st.markdown("### 📋 Step 2: Select Your Skills")
-        selected = st.multiselect("Choose your strongest skills:", skills_pool, default=st.session_state.get("resume_skills", []))
-        st.session_state.selected_skills = selected
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        if mode == "Login" and st.button("Log In"):
+            try:
+                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                st.session_state.supabase_user = res.user
+                st.session_state.supabase_session = res.session
+                st.success("✅ Logged in successfully.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Login failed: {e}")
 
-    elif step == 2:
-        st.markdown("### 🧠 Step 3: Behavioral Survey")
-        st.caption("Tell us how you show up at work. Choose the statement that best reflects you for each trait.")
-        behavior_questions = {
-            "Meets deadlines consistently": None,
-            "Collaborates well in teams": None,
-            "Adapts quickly to change": None,
-            "Demonstrates leadership": None,
-            "Communicates effectively": None,
+        elif mode == "Sign Up" and st.button("Register"):
+            try:
+                supabase.auth.sign_up({"email": email, "password": password})
+                st.success("✅ Account created! Check your email for verification.")
+            except Exception as e:
+                st.error(f"Signup failed: {e}")
+
+# --- RECRUITER DASHBOARD ---
+def recruiter_dashboard():
+    st.title("💼 Recruiter Dashboard")
+
+    with st.sidebar.expander("🎚 Adjust Quality of Hire Weights", expanded=True):
+        w_jd = st.slider("JD Match", 0, 100, 25)
+        w_ref = st.slider("References", 0, 100, 25)
+        w_beh = st.slider("Behavior", 0, 100, 25)
+        w_skill = st.slider("Skills", 0, 100, 25)
+
+    total = w_jd + w_ref + w_beh + w_skill
+    if total == 0:
+        st.warning("Adjust sliders to see candidate scores.")
+        return
+
+    df = pd.DataFrame([
+        {
+            "Candidate": "Lamont",
+            "JD Match": 88,
+            "Reference": 90,
+            "Behavior": 84,
+            "Skill": 92,
+            "Gaps": "Strategic Planning",
+            "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education, ✅ HR"
+        },
+        {
+            "Candidate": "Jasmine",
+            "JD Match": 82,
+            "Reference": 78,
+            "Behavior": 90,
+            "Skill": 80,
+            "Gaps": "Leadership",
+            "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"
+        },
+        {
+            "Candidate": "Andre",
+            "JD Match": 75,
+            "Reference": 65,
+            "Behavior": 70,
+            "Skill": 78,
+            "Gaps": "Communication",
+            "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"
         }
-        opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
-        score_map = {opt: i + 1 for i, opt in enumerate(opts)}
-        score_total = 0
-        for i, question in enumerate(behavior_questions):
-            response = st.radio(question, opts, index=2, key=f"behavior_{i}")
-            score_total += score_map[response]
-        behavior_score = round((score_total / (len(behavior_questions) * 5)) * 100, 1)
-        st.session_state.behavior_score = behavior_score
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+    ])
 
-    elif step == 3:
-        st.markdown("### 🤝 Step 4: References")
-        st.text_input("Reference 1 Name", key="ref1_name")
-        st.text_input("Reference 1 Email", key="ref1_email")
-        st.text_input("Reference 2 Name", key="ref2_name")
-        st.text_input("Reference 2 Email", key="ref2_email")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+    df["QoH Score"] = (
+        df["JD Match"] * w_jd +
+        df["Reference"] * w_ref +
+        df["Behavior"] * w_beh +
+        df["Skill"] * w_skill
+    ) / total
 
-    elif step == 4:
-        st.markdown("### 📄 Step 5: JD Matching & Skills Gap")
-        jd1 = st.text_area("Paste Job Description 1", height=150)
-        jd2 = st.text_area("Paste Job Description 2", height=150)
-        if jd1 and "resume_text" in st.session_state:
-            scores = match_resume_to_jds(st.session_state.resume_text, [jd1, jd2])
-            st.session_state.jd_scores = scores
-            st.success("✅ JD Matching Complete")
-            for i, score in enumerate(scores):
-                st.markdown(f"**JD {i+1} Match Score:** {score}%")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+    df = df.sort_values("QoH Score", ascending=False)
+    st.subheader("📊 Candidate Comparison Table")
+    st.dataframe(df[["Candidate", "JD Match", "Reference", "Behavior", "Skill", "QoH Score", "Gaps", "Verified"]], use_container_width=True)
 
-    elif step == 5:
-        st.markdown("### 📊 Step 6: Quality of Hire Summary")
-        jd_scores = st.session_state.get("jd_scores", [70, 80])
-        avg_jd = round(sum(jd_scores) / len(jd_scores), 1)
-        skills = len(st.session_state.get("selected_skills", [])) * 5
-        ref_score = 90  # Placeholder
-        behavior = st.session_state.get("behavior_score", 50)
-        qoh = round((skills + ref_score + behavior + avg_jd) / 4, 1)
-        st.metric("📈 Quality of Hire (QoH)", f"{qoh}/100")
-        st.session_state.qoh_score = qoh
-        st.button("Back", on_click=prev_step)
-        st.button("Next: Growth Pathway", on_click=next_step)
+    st.markdown("---")
+    st.subheader("🔍 AI Recommendations")
 
-    elif step == 6:
-        st.markdown("### 🚀 Step 7: Career Growth Roadmap")
-        prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nGenerate a growth roadmap:\n- 30-day plan\n- 60-day plan\n- 90-day plan"
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7
-            )
-            roadmap = response.choices[0].message.content.strip()
-        except:
-            roadmap = """
-**30-Day Plan:** Integrate and build rapport.  
-**60-Day Plan:** Contribute to team success.  
-**90-Day Plan:** Lead initiatives and grow strategically.
-"""
-        st.markdown(f"**Your Growth Roadmap:**\n\n{roadmap}")
-        st.success("🎉 Candidate Journey Complete!")
+    for _, row in df.iterrows():
+        score = row["QoH Score"]
+        candidate = row["Candidate"]
+        gaps = row["Gaps"]
+
+        if score >= 90:
+            st.success(f"✅ {candidate}: High-potential candidate. Strong hire.")
+        elif row["Reference"] < 75:
+            st.warning(f"⚠️ {candidate}: Weak reference — follow up needed.")
+        elif row["Skill"] < 80:
+            st.info(f"ℹ️ {candidate}: Needs development in **{gaps}**.")
+        else:
+            st.write(f"📌 {candidate}: Promising profile. Ready for interview.")
+
+# --- ROUTING ---
+if st.session_state.supabase_user:
+    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
+    if view == "Candidate":
+        candidate_journey()
+    else:
+        recruiter_dashboard()
+else:
+    login_ui()
