@@ -380,7 +380,7 @@ def login_ui():
                 st.error(f"Signup failed: {e}")
 
 
-    # --- SAVE PROFILE LOGIC ---
+    # --- FINAL STEP: SAVE PROFILE LOGIC ---
     st.markdown("### 📩 Save Your Profile")
     if st.button("Save My Profile"):
         selected_skills = st.session_state.get("selected_skills", [])
