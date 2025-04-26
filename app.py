@@ -1,5 +1,3 @@
-# --- This is the FULL corrected App.py file including all journey steps ---
-
 import streamlit as st
 import openai
 import pdfplumber
@@ -11,7 +9,7 @@ from datetime import datetime
 from supabase import create_client, Client
 
 # --- CONFIG ---
-st.set_page_config(page_title="Skippr", layout="wide")
+st.set_page_config(page_title="GrowScore", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -186,6 +184,7 @@ def candidate_journey():
     elif step == 9:
         st.markdown("### 🚀 Growth Roadmap")
         prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nGenerate a growth roadmap:\n- 30-day\n- 60-day\n- 90-day\n- 6-month\n- 1-year"
+        growth_roadmap_text = ""
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -194,43 +193,64 @@ def candidate_journey():
             )
             growth_roadmap_text = response.choices[0].message.content.strip()
             st.markdown(growth_roadmap_text)
-        except:
+        except Exception as e:
             growth_roadmap_text = "• 30-Day: Get oriented\n• 60-Day: Deliver project\n• 90-Day: Lead initiative\n• 6-Month: Exceed KPIs\n• 1-Year: Level up"
             st.markdown(growth_roadmap_text)
+            st.warning(f"Using fallback roadmap due to error: {e}")
+
         st.success("🎉 Complete!")
         st.button("Back", on_click=prev_step)
 
-if st.button("Save Profile"):
-    selected_skills = st.session_state.get("selected_skills", [])
-    jd_scores_list = st.session_state.get("jd_scores", [])
-    avg_jd_score = round(sum(jd_scores_list) / len(jd_scores_list), 2) if jd_scores_list else 0
+        if st.button("Save Profile"):
+            selected_skills = st.session_state.get("selected_skills", [])
+            jd_scores_list = st.session_state.get("jd_scores", [])
+            profile_data = {
+                "name": st.session_state.get("cand_name", ""),
+                "job_title": st.session_state.get("cand_title", ""),
+                "resume_text": st.session_state.get("resume_text", ""),
+                "selected_skills": json.dumps(selected_skills),
+                "behavior_score": st.session_state.get("behavior_score", 0),
+                "reference_data": json.dumps({"mock": "data"}),
+                "education": json.dumps({"mock": "data"}),
+                "qoh_score": st.session_state.get("qoh_score", 0),
+                "jd_scores": json.dumps(jd_scores_list),
+                "growth_roadmap": growth_roadmap_text,
+            }
+            try:
+                result = supabase.table("profiles").insert(profile_data).execute()
+                if result.status_code in [200, 201]:
+                    st.success("✅ Profile saved successfully!")
+                else:
+                    st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
+            except Exception as e:
+                st.error(f"❌ Error saving profile: {e}")
 
-    profile_data = {
-        "name": st.session_state.get("cand_name", ""),
-        "job_title": st.session_state.get("cand_title", ""),
-        "resume_text": st.session_state.get("resume_text", ""),
-        "selected_skills": json.dumps(selected_skills),
-        "behavior_score": st.session_state.get("behavior_score", 0),
-        "reference_data": json.dumps({"mock": "data"}),
-        "education": json.dumps({"mock": "data"}),
-        "qoh_score": st.session_state.get("qoh_score", 0),
-        "jd_scores": json.dumps(jd_scores_list),  # <-- fixed here
-        "growth_roadmap": growth_roadmap_text,
-    }
-
-    try:
-        result = supabase.table("profiles").insert(profile_data).execute()
-        if result.status_code in [200, 201]:
-            st.success("✅ Profile saved successfully!")
-        else:
-            st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
-    except Exception as e:
-        st.error(f"❌ Error saving profile: {e}")
-
+# --- RECRUITER DASHBOARD ---
+def recruiter_dashboard():
+    st.title("💼 Recruiter Dashboard")
+    with st.sidebar.expander("🎚 Customize Weights", expanded=True):
+        w_jd = st.slider("JD Match", 0, 100, 25)
+        w_ref = st.slider("References", 0, 100, 25)
+        w_beh = st.slider("Behavior", 0, 100, 25)
+        w_skill = st.slider("Skills", 0, 100, 25)
+    total = w_jd + w_ref + w_beh + w_skill
+    df = pd.DataFrame([
+        {"Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84, "Skill": 92},
+        {"Candidate": "Jasmine", "JD Match": 82, "Reference": 78, "Behavior": 90, "Skill": 80},
+        {"Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70, "Skill": 78}
+    ])
+    df["QoH"] = (df["JD Match"] * w_jd + df["Reference"] * w_ref + df["Behavior"] * w_beh + df["Skill"] * w_skill) / total
+    df = df.sort_values("QoH", ascending=False)
+    st.dataframe(df)
 
 # --- MAIN ---
 def main():
-    candidate_journey()
+    menu = ["Candidate", "Recruiter Dashboard"]
+    choice = st.sidebar.selectbox("Menu", menu)
+    if choice == "Candidate":
+        candidate_journey()
+    else:
+        recruiter_dashboard()
 
 if __name__ == "__main__":
     main()
