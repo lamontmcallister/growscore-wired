@@ -379,6 +379,39 @@ def login_ui():
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
+
+    # --- SAVE PROFILE LOGIC ---
+    st.markdown("### 📩 Save Your Profile")
+    if st.button("Save My Profile"):
+        selected_skills = st.session_state.get("selected_skills", [])
+        jd_scores_list = st.session_state.get("jd_scores", [])
+        user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
+
+        profile_data = {
+            "user_email": user_email,
+            "name": st.session_state.get("cand_name", ""),
+            "job_title": st.session_state.get("cand_title", ""),
+            "resume_text": st.session_state.get("resume_text", ""),
+            "selected_skills": json.dumps(selected_skills),
+            "behavior_score": st.session_state.get("behavior_score", 0),
+            "reference_data": json.dumps({"mock": "data"}),
+            "education": json.dumps({"mock": "data"}),
+            "qoh_score": st.session_state.get("qoh_score", 0),
+            "jd_scores": json.dumps(jd_scores_list),
+            "growth_roadmap": st.session_state.get("growth_roadmap_text", ""),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+        try:
+            result = supabase.table("profiles").insert(profile_data).execute()
+            if result.status_code in [200, 201]:
+                st.success("✅ Profile saved successfully!")
+            else:
+                st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
+        except Exception as e:
+            st.error(f"❌ Error saving profile: {e}")
+
+
 # --- ROUTING ---
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
