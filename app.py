@@ -8,7 +8,10 @@ from datetime import datetime
 from supabase import create_client, Client
 
 
+
+st.set_page_config(page_title="GrowScore Enhanced", layout="wide")
 # --- CONFIG ---
+
 st.set_page_config(page_title="GrowScore Enhanced", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
