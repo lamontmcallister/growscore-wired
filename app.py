@@ -200,32 +200,33 @@ def candidate_journey():
         st.success("🎉 Complete!")
         st.button("Back", on_click=prev_step)
 
-        if st.button("Save Profile"):
-            selected_skills = st.session_state.get("selected_skills", [])
-            jd_scores_list = st.session_state.get("jd_scores", [])
-            avg_jd_score = round(sum(jd_scores_list) / len(jd_scores_list), 2) if jd_scores_list else 0
+if st.button("Save Profile"):
+    selected_skills = st.session_state.get("selected_skills", [])
+    jd_scores_list = st.session_state.get("jd_scores", [])
+    avg_jd_score = round(sum(jd_scores_list) / len(jd_scores_list), 2) if jd_scores_list else 0
 
-            profile_data = {
-                "name": st.session_state.get("cand_name", ""),
-                "job_title": st.session_state.get("cand_title", ""),
-                "resume_text": st.session_state.get("resume_text", ""),
-                "selected_skills": json.dumps(selected_skills),
-                "behavior_score": st.session_state.get("behavior_score", 0),
-                "reference_data": json.dumps({"mock": "data"}),
-                "education": json.dumps({"mock": "data"}),
-                "qoh_score": st.session_state.get("qoh_score", 0),
-                "jd_scores": avg_jd_score,
-                "growth_roadmap": growth_roadmap_text,
-            }
+    profile_data = {
+        "name": st.session_state.get("cand_name", ""),
+        "job_title": st.session_state.get("cand_title", ""),
+        "resume_text": st.session_state.get("resume_text", ""),
+        "selected_skills": json.dumps(selected_skills),
+        "behavior_score": st.session_state.get("behavior_score", 0),
+        "reference_data": json.dumps({"mock": "data"}),
+        "education": json.dumps({"mock": "data"}),
+        "qoh_score": st.session_state.get("qoh_score", 0),
+        "jd_scores": json.dumps(jd_scores_list),  # <-- fixed here
+        "growth_roadmap": growth_roadmap_text,
+    }
 
-            try:
-                result = supabase.table("profiles").insert(profile_data).execute()
-                if result.status_code in [200, 201]:
-                    st.success("✅ Profile saved successfully!")
-                else:
-                    st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
-            except Exception as e:
-                st.error(f"❌ Error saving profile: {e}")
+    try:
+        result = supabase.table("profiles").insert(profile_data).execute()
+        if result.status_code in [200, 201]:
+            st.success("✅ Profile saved successfully!")
+        else:
+            st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
+    except Exception as e:
+        st.error(f"❌ Error saving profile: {e}")
+
 
 # --- MAIN ---
 def main():
