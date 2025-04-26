@@ -11,6 +11,12 @@ from supabase import create_client, Client
 # --- CONFIG ---
 st.set_page_config(page_title="GrowScore Enhanced", layout="wide")
 
+SUPABASE_URL = st.secrets["supabase"]["url"]
+SUPABASE_KEY = st.secrets["supabase"]["key"]
+OPENAI_KEY = st.secrets["openai"]["key"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+openai.api_key = OPENAI_KEY
+
 # --- AUTH ---
 def login_section():
     st.sidebar.title("Login / Signup")
