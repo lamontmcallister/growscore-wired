@@ -7,53 +7,7 @@ import numpy as np
 from datetime import datetime
 from supabase import create_client, Client
 
-
-
-st.set_page_config(page_title="GrowScore Enhanced", layout="wide")
 # --- CONFIG ---
-
-st.set_page_config(page_title="GrowScore Enhanced", layout="wide")
-
-SUPABASE_URL = st.secrets["supabase"]["url"]
-SUPABASE_KEY = st.secrets["supabase"]["key"]
-OPENAI_KEY = st.secrets["openai"]["key"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-openai.api_key = OPENAI_KEY
-
-# --- AUTH ---
-def login_section():
-    st.sidebar.title("Login / Signup")
-    auth_mode = st.sidebar.radio("Choose", ["Login", "Sign Up"])
-    if auth_mode == "Sign Up":
-        email = st.sidebar.text_input("Email", key="signup_email")
-        password = st.sidebar.text_input("Password", type="password", key="signup_password")
-        if st.sidebar.button("Register"):
-            try:
-                user = supabase.auth.sign_up({"email": email, "password": password})
-                st.sidebar.success("Account created! Please check your email for verification.")
-            except Exception as e:
-                st.sidebar.error(f"Signup error: {e}")
-    if auth_mode == "Login":
-        email = st.sidebar.text_input("Email", key="login_email")
-        password = st.sidebar.text_input("Password", type="password", key="login_password")
-        if st.sidebar.button("Login Now"):
-            try:
-                user = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                st.session_state.supabase_user = user
-                st.sidebar.success(f"Welcome {email}!")
-                st.experimental_rerun()
-            except Exception as e:
-                st.sidebar.error(f"Login error: {e}")
-    if st.session_state.get("supabase_user"):
-        if st.sidebar.button("Log Out"):
-            st.session_state.supabase_user = None
-            st.experimental_rerun()
-
-login_section()
-if not st.session_state.get("supabase_user"):
-    st.warning("Please log in to access GrowScore features.")
-    st.stop()
-
 st.set_page_config(page_title="Skippr", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
