@@ -4,18 +4,88 @@ import pdfplumber
 import pandas as pd
 import ast
 import numpy as np
-import json
 from datetime import datetime
 from supabase import create_client, Client
 
+
 # --- CONFIG ---
-st.set_page_config(page_title="GrowScore", layout="wide")
+st.set_page_config(page_title="GrowScore Enhanced", layout="wide")
+
+# --- AUTH ---
+def login_section():
+    st.sidebar.title("Login / Signup")
+    auth_mode = st.sidebar.radio("Choose", ["Login", "Sign Up"])
+    if auth_mode == "Sign Up":
+        email = st.sidebar.text_input("Email", key="signup_email")
+        password = st.sidebar.text_input("Password", type="password", key="signup_password")
+        if st.sidebar.button("Register"):
+            try:
+                user = supabase.auth.sign_up({"email": email, "password": password})
+                st.sidebar.success("Account created! Please check your email for verification.")
+            except Exception as e:
+                st.sidebar.error(f"Signup error: {e}")
+    if auth_mode == "Login":
+        email = st.sidebar.text_input("Email", key="login_email")
+        password = st.sidebar.text_input("Password", type="password", key="login_password")
+        if st.sidebar.button("Login Now"):
+            try:
+                user = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                st.session_state.supabase_user = user
+                st.sidebar.success(f"Welcome {email}!")
+                st.experimental_rerun()
+            except Exception as e:
+                st.sidebar.error(f"Login error: {e}")
+    if st.session_state.get("supabase_user"):
+        if st.sidebar.button("Log Out"):
+            st.session_state.supabase_user = None
+            st.experimental_rerun()
+
+login_section()
+if not st.session_state.get("supabase_user"):
+    st.warning("Please log in to access GrowScore features.")
+    st.stop()
+
+st.set_page_config(page_title="Skippr", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
 OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
+
+# --- STYLING ---
+def load_custom_css():
+    st.markdown("""
+        <style>
+            html, body, [class*="css"] {
+                font-family: 'Segoe UI', sans-serif;
+                padding: 0rem !important;
+            }
+            h1, h2, h3 {
+                font-weight: 600 !important;
+                margin-bottom: 0.5rem;
+            }
+            div.stButton > button {
+                background-color: #ff6a00;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 0.5rem 1.2rem;
+                font-weight: 600;
+                font-size: 1rem;
+                margin-top: 0.5rem;
+            }
+            .stSlider > div {
+                padding-top: 0.5rem;
+            }
+            section[data-testid="stSidebar"] {
+                background-color: #f9f4ef;
+                border-right: 1px solid #e1dfdb;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+load_custom_css()
 
 # --- SESSION SETUP ---
 if "supabase_user" not in st.session_state:
@@ -184,46 +254,17 @@ def candidate_journey():
     elif step == 9:
         st.markdown("### 🚀 Growth Roadmap")
         prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nGenerate a growth roadmap:\n- 30-day\n- 60-day\n- 90-day\n- 6-month\n- 1-year"
-        growth_roadmap_text = ""
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.6
             )
-            growth_roadmap_text = response.choices[0].message.content.strip()
-            st.markdown(growth_roadmap_text)
-        except Exception as e:
-            growth_roadmap_text = "• 30-Day: Get oriented\n• 60-Day: Deliver project\n• 90-Day: Lead initiative\n• 6-Month: Exceed KPIs\n• 1-Year: Level up"
-            st.markdown(growth_roadmap_text)
-            st.warning(f"Using fallback roadmap due to error: {e}")
-
+            st.markdown(response.choices[0].message.content.strip())
+        except:
+            st.markdown("• 30-Day: Get oriented\n• 60-Day: Deliver project\n• 90-Day: Lead initiative\n• 6-Month: Exceed KPIs\n• 1-Year: Level up")
         st.success("🎉 Complete!")
         st.button("Back", on_click=prev_step)
-
-        if st.button("Save Profile"):
-            selected_skills = st.session_state.get("selected_skills", [])
-            jd_scores_list = st.session_state.get("jd_scores", [])
-            profile_data = {
-                "name": st.session_state.get("cand_name", ""),
-                "job_title": st.session_state.get("cand_title", ""),
-                "resume_text": st.session_state.get("resume_text", ""),
-                "selected_skills": json.dumps(selected_skills),
-                "behavior_score": st.session_state.get("behavior_score", 0),
-                "reference_data": json.dumps({"mock": "data"}),
-                "education": json.dumps({"mock": "data"}),
-                "qoh_score": st.session_state.get("qoh_score", 0),
-                "jd_scores": json.dumps(jd_scores_list),
-                "growth_roadmap": growth_roadmap_text,
-            }
-            try:
-                result = supabase.table("profiles").insert(profile_data).execute()
-                if result.status_code in [200, 201]:
-                    st.success("✅ Profile saved successfully!")
-                else:
-                    st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
-            except Exception as e:
-                st.error(f"❌ Error saving profile: {e}")
 
 # --- RECRUITER DASHBOARD ---
 def recruiter_dashboard():
@@ -243,14 +284,50 @@ def recruiter_dashboard():
     df = df.sort_values("QoH", ascending=False)
     st.dataframe(df)
 
-# --- MAIN ---
-def main():
-    menu = ["Candidate", "Recruiter Dashboard"]
-    choice = st.sidebar.selectbox("Menu", menu)
-    if choice == "Candidate":
+# --- LOGIN UI ---
+def login_ui():
+    st.markdown("##")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("### 💬 Mission Statement")
+        st.markdown("""
+        <div style='text-align: center; font-size: 20px; font-weight: 500; line-height: 1.5;'>
+            <em>From Rejection to Revolution.</em><br>
+            Skippr exists to restore dignity in hiring—<br>
+            empowering talent with data, coaching, and visibility,<br>
+            while giving recruiters the signal they’ve always needed:<br>
+            <strong>Verified Quality of Hire</strong>, before the first interview.
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    with st.sidebar:
+        st.header("🔐 Log In or Create Account")
+        mode = st.radio("Choose Mode", ["Login", "Sign Up"])
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        if mode == "Login" and st.button("Log In"):
+            try:
+                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                st.session_state.supabase_user = res.user
+                st.session_state.supabase_session = res.session
+                st.success("✅ Logged in successfully.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Login failed: {e}")
+        elif mode == "Sign Up" and st.button("Register"):
+            try:
+                supabase.auth.sign_up({"email": email, "password": password})
+                st.success("✅ Account created! Check your email for verification.")
+            except Exception as e:
+                st.error(f"Signup failed: {e}")
+
+# --- ROUTING ---
+if st.session_state.supabase_user:
+    view = st.sidebar.radio("Portal", ["Candidate", "Recruiter"])
+    if view == "Candidate":
         candidate_journey()
     else:
         recruiter_dashboard()
-
-if __name__ == "__main__":
-    main()
+else:
+    login_ui()
