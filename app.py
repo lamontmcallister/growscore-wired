@@ -18,10 +18,46 @@ openai.api_key = OPENAI_KEY
 
 # --- CUSTOM CSS ---
 def load_custom_css():
-    with open("style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+            html, body, [class*="css"] {
+                font-family: 'Inter', sans-serif;
+                padding: 0rem !important;
+                background-color: #f5f7fa;
+            }
+            h1, h2, h3 {
+                font-weight: 600 !important;
+                margin-bottom: 0.5rem;
+                color: #003366;
+            }
+            div.stButton > button {
+                background-color: #0072ce;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 0.5rem 1.2rem;
+                font-weight: 600;
+                font-size: 1rem;
+                margin-top: 0.5rem;
+            }
+            .stSlider > div {
+                padding-top: 0.5rem;
+            }
+            section[data-testid="stSidebar"] {
+                background-color: #e6f0f8;
+                border-right: 1px solid #cce0f5;
+            }
+            .markdown-block {
+                background-color: #f8f8f8;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
+                margin-bottom: 1rem;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-load_custom_css()
 
 # --- SESSION STATE INIT ---
 for k in ["supabase_session", "supabase_user", "step", "profiles", "active_profile", "active_profile_data"]:
