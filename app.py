@@ -425,7 +425,7 @@ def login_ui():
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
     if view == "Candidate":
-        profile_selector()
+        profile_management()
         if st.session_state.active_profile:
             candidate_journey()
     else:
