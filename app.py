@@ -259,6 +259,7 @@ def candidate_journey():
         ref_score = 90
         qoh, breakdown = calculate_qoh_score(skill_count, ref_score, behavior, jd_scores)
         st.metric("📈 QoH Score", f"{qoh}/100")
+        ensure_profile_initialized(st.session_state.active_profile)
         st.session_state.qoh_score = qoh
         st.session_state.profiles[st.session_state.active_profile]["qoh"] = qoh
         st.session_state.profiles[st.session_state.active_profile]["progress"]["Quality of Hire"] = True
