@@ -1,6 +1,5 @@
 import streamlit as st
 import openai
-
 import ast
 import pdfplumber
 import pandas as pd
@@ -423,6 +422,7 @@ if st.session_state.supabase_user:
 else:
     login_ui()
 
+# --- PROFILE MANAGEMENT ---
 def profile_management():
     st.title("👤 Profile Management")
     user_email = st.session_state.supabase_user.user.email
@@ -450,6 +450,5 @@ def profile_management():
         st.session_state.step = 0
         if st.button(f"Edit Profile: {selected}"):
             st.rerun()
-# --- EXTENDED CANDIDATE JOURNEY ---
 
 
