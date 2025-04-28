@@ -36,13 +36,13 @@ def login_section():
                 user = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state.supabase_user = user
                 st.sidebar.success(f"Welcome {email}!")
-                st.experimental_rerun()
+                st.rerun()
             except Exception as e:
                 st.sidebar.error(f"Login error: {e}")
     if st.session_state.get("supabase_user"):
         if st.sidebar.button("Log Out"):
             st.session_state.supabase_user = None
-            st.experimental_rerun()
+            st.rerun()
 
 # --- PROFILE MANAGEMENT ---
 def profile_management():
@@ -66,12 +66,12 @@ def profile_management():
         if st.button("Start with New Profile") and new_name:
             st.session_state.active_profile = new_name
             st.session_state.step = 0
-            st.experimental_rerun()
+            st.rerun()
     elif selected:
         st.session_state.active_profile = selected
         st.session_state.step = 0
         if st.button(f"Edit Profile: {selected}"):
-            st.experimental_rerun()
+            st.rerun()
 
 # --- EXTENDED CANDIDATE JOURNEY ---
 def candidate_journey():
