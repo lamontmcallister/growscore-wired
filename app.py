@@ -47,11 +47,14 @@ def login_section():
 # --- PROFILE MANAGEMENT ---
 def profile_management():
     st.title("👤 Profile Management")
+
     user_email = st.session_state.supabase_user.user.email
-    profiles = supabase.table("profiles").select("*").eq("user_email", user_email).execute()
-except Exception as e:
-    st.error(f"❌ Supabase query error: {e}")
-    st.stop()
+    try:
+        profiles = supabase.table("profiles").select("*").eq("user_email", user_email).execute()
+    except Exception as e:
+        st.error(f"❌ Supabase query error: {e}")
+        st.stop()
+
     profile_names = [p["name"] for p in profiles.data] if profiles.data else []
     st.write("Choose a profile or create a new one:")
     if profile_names:
