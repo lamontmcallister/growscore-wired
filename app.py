@@ -99,7 +99,60 @@ def calculate_qoh_score(skill_count, ref, behav, jd_scores):
     return final, {"Skills": skills, "References": ref, "Behavior": behav, "JD Match": avg_jd}
 
 # --- PROFILE MANAGEMENT ---
+
 def profile_management():
+    st.title("👤 Profile Management")
+    user_email = st.session_state.supabase_user.email
+    try:
+        profiles = supabase.table("profiles").select("*").eq("user_email", user_email).execute()
+    except Exception:
+        st.error("❌ Failed to fetch profiles. Please try again later.")
+        st.stop()
+
+    profile_names = [p["name"] for p in profiles.data] if profiles.data else []
+    st.write("Choose a profile or create a new one:")
+
+    selected = st.selectbox("Select Profile", ["Create New"] + profile_names if profile_names else ["Create New"])
+
+    if selected == "Create New":
+        new_name = st.text_input("Enter New Profile Name")
+        if st.button("Start with New Profile") and new_name:
+            if new_name in profile_names:
+                st.warning("Profile name already exists. Choose another name.")
+            else:
+                profile_data = {
+                    "user_email": user_email,
+                    "name": new_name,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+                try:
+                    supabase.table("profiles").insert(profile_data).execute()
+                    st.success(f"✅ New profile '{new_name}' created successfully!")
+                    st.session_state.active_profile = new_name
+                    st.session_state.step = 0
+                    st.session_state.profile_selected = True
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error creating profile: {e}")
+    elif selected:
+        st.session_state.active_profile = selected
+        st.session_state.step = 0
+        st.session_state.profile_selected = True
+        profile_data = next((p for p in profiles.data if p["name"] == selected), {})
+        st.write(f"**Job Title**: {profile_data.get('job_title', 'N/A')}")
+        st.write(f"**QoH Score**: {profile_data.get('qoh_score', 'N/A')}")
+        if st.button(f"Edit Profile: {selected}"):
+            st.rerun()
+        if st.button(f"Delete Profile: {selected}"):
+            try:
+                supabase.table("profiles").delete().eq("name", selected).eq("user_email", user_email).execute()
+                st.success(f"Deleted profile: {selected}")
+                st.session_state.profile_selected = False
+                st.session_state.active_profile = None
+                st.rerun()
+            except Exception:
+                st.error("Failed to delete profile.")
+
     st.title("👤 Profile Management")
     user_email = st.session_state.supabase_user.email
     try:
@@ -268,7 +321,61 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    elif step == 9:
+    
+elif step == 9:
+    st.markdown("### 🚀 Step 10: Growth Roadmap")
+    prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+        roadmap = response.choices[0].message.content.strip()
+    except:
+        roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Prepare for promotion"
+    
+    st.markdown(roadmap)
+    st.success("🎉 Complete!")
+
+    st.markdown("### 📩 Save Your Profile")
+    if st.button("Save My Profile"):
+        selected_skills = st.session_state.get("selected_skills", ["Python", "SQL"])
+        jd_scores_list = st.session_state.get("jd_scores", [75, 85])
+        user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
+        growth_roadmap = roadmap
+        profile_data = {
+            "user_email": user_email,
+            "name": st.session_state.get("active_profile", "Demo User"),
+            "job_title": st.session_state.get("cand_title", "Demo Role"),
+            "resume_text": st.session_state.get("resume_text", "This is a demo resume."),
+            "selected_skills": selected_skills,
+            "behavior_score": st.session_state.get("behavior_score", 70),
+            "reference_data": {"mock": "data"},
+            "education": {"mock": "data"},
+            "qoh_score": st.session_state.get("qoh_score", 80),
+            "jd_scores": jd_scores_list,
+            "growth_roadmap": growth_roadmap,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        try:
+            result = supabase.table("profiles").update(profile_data).eq("user_email", user_email).eq("name", profile_data["name"]).execute()
+            if result.data:
+                st.success("✅ Profile updated successfully!")
+            else:
+                supabase.table("profiles").insert(profile_data).execute()
+                st.success("✅ Profile created successfully!")
+            st.session_state.profile_saved = True
+        except Exception as e:
+            st.error(f"❌ Error saving profile: {e}")
+
+    if st.session_state.get("profile_saved"):
+        if st.button("🏠 Home"):
+            st.session_state.step = 0
+            st.session_state.profile_selected = False
+            st.session_state.profile_saved = False
+            st.rerun()
+
         st.markdown("### 🚀 Step 10: Growth Roadmap")
         prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
         try:
