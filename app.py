@@ -8,7 +8,7 @@ from datetime import datetime
 from supabase import create_client, Client
 
 # --- CONFIG ---
-st.set_page_config(page_title="GrowScore Full", layout="wide")
+st.set_page_config(page_title="GrowScore Polished", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -45,7 +45,7 @@ def login_section():
             st.session_state.supabase_user = None
             st.rerun()
 
-# --- PROFILE MANAGEMENT ---
+# --- PROFILE MANAGEMENT --- (UNCHANGED)
 def profile_management():
     st.title("👤 Profile Management")
     user_email = st.session_state.supabase_user.user.email
@@ -74,18 +74,18 @@ def profile_management():
         if st.button(f"Edit Profile: {selected}"):
             st.rerun()
 
-# --- CANDIDATE JOURNEY ---
+# --- POLISHED CANDIDATE JOURNEY UI ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
 
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
 
-    st.title(f"🚀 Candidate Journey – Profile: {st.session_state.active_profile}")
+    st.header(f"🚀 Candidate Journey – Profile: {st.session_state.active_profile}")
     st.progress((step + 1) / 8)
 
     if step == 0:
-        st.markdown("### Step 1: Contact Info + Resume Upload")
+        st.subheader("📄 Step 1: Contact Info + Resume Upload")
         st.text_input("Full Name", key="cand_name")
         st.text_input("Target Job Title", key="cand_title")
         uploaded = st.file_uploader("Upload Resume (PDF/TXT)", type=["pdf", "txt"])
@@ -94,14 +94,15 @@ def candidate_journey():
                 "\n".join([p.extract_text() for p in pdfplumber.open(uploaded).pages if p.extract_text()])
             st.session_state.resume_text = text
             st.success("✅ Resume parsed.")
-        st.button("Next", on_click=next_step)
+        st.button("Next ➡️", on_click=next_step)
 
     elif step == 1:
-        st.markdown("### Step 2: Skills + Behavior Survey")
+        st.subheader("🛠 Step 2: Skills + Behavior Survey")
         skills_pool = ["Python", "SQL", "Leadership", "Data Analysis", "Communication"]
-        selected = st.multiselect("Choose your strongest skills:", skills_pool)
+        selected = st.multiselect("Select your skills:", skills_pool)
         st.session_state.selected_skills = selected
 
+        st.markdown("#### Behavior Survey")
         opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
         score_map = {opt: i + 1 for i, opt in enumerate(opts)}
         score_total = 0
@@ -116,92 +117,10 @@ def candidate_journey():
             score_total += score_map[response]
         st.session_state.behavior_score = round((score_total / 25) * 100, 1)
 
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("⬅️ Back", on_click=prev_step)
+        st.button("Next ➡️", on_click=next_step)
 
-    elif step == 2:
-        st.markdown("### Step 3: References")
-        st.text_input("Reference 1 Name", key="ref1_name")
-        st.text_input("Reference 1 Email", key="ref1_email")
-        st.text_input("Reference 2 Name", key="ref2_name")
-        st.text_input("Reference 2 Email", key="ref2_email")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
-
-    elif step == 3:
-        st.markdown("### Step 4: Education")
-        st.text_input("Degree")
-        st.text_input("Major")
-        st.text_input("Institution")
-        st.text_input("Grad Year")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
-
-    elif step == 4:
-        st.markdown("### Step 5: Job Match Scoring")
-        jd1 = st.text_area("Paste Job Description 1")
-        jd2 = st.text_area("Paste Job Description 2")
-        if jd1 and "resume_text" in st.session_state:
-            jd_scores = [85, 90]  # Simulated scores
-            st.session_state.jd_scores = jd_scores
-            for i, score in enumerate(jd_scores):
-                st.markdown(f"**JD {i+1} Match Score:** {score}%")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
-
-    elif step == 5:
-        st.markdown("### Step 6: Quality of Hire (QoH) Score")
-        jd_scores = st.session_state.get("jd_scores", [75, 80])
-        avg_jd = round(sum(jd_scores) / len(jd_scores), 1)
-        skills = len(st.session_state.get("selected_skills", [])) * 5
-        behavior = st.session_state.get("behavior_score", 50)
-        ref_score = 90
-        qoh = round((skills + behavior + ref_score + avg_jd) / 4, 1)
-        st.metric("📈 QoH Score", f"{qoh}/100")
-        st.session_state.qoh_score = qoh
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
-
-    elif step == 6:
-        st.markdown("### Step 7: Growth Roadmap")
-        roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver project\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Promotion-ready"
-        st.markdown(roadmap)
-        st.session_state["growth_roadmap_text"] = roadmap
-        st.success("🎉 Journey Complete!")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
-
-    elif step == 7:
-        st.markdown("### 📩 Save Your Profile")
-        if st.button("Save My Profile"):
-            user_email = st.session_state.supabase_user.user.email
-            profile_data = {
-                "user_email": user_email,
-                "name": st.session_state.active_profile,
-                "job_title": st.session_state.get("cand_title", ""),
-                "selected_skills": st.session_state.get("selected_skills", []),
-                "behavior_score": st.session_state.get("behavior_score", 0),
-                "reference_data": json.dumps({"mock": "data"}),
-                "education": json.dumps({"mock": "data"}),
-                "qoh_score": st.session_state.get("qoh_score", 0),
-                "jd_scores": st.session_state.get("jd_scores", []),
-                "growth_roadmap": st.session_state.get("growth_roadmap_text", ""),
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            try:
-                existing = supabase.table("profiles").select("*").eq("user_email", user_email).eq("name", st.session_state.active_profile).execute()
-                if existing.data:
-                    supabase.table("profiles").update(profile_data).eq("user_email", user_email).eq("name", st.session_state.active_profile).execute()
-                    st.success("✅ Profile updated!")
-                else:
-                    supabase.table("profiles").insert(profile_data).execute()
-                    st.success("✅ Profile saved!")
-            except Exception as e:
-                st.error(f"❌ Error saving profile: {e}")
-        st.button("Back", on_click=prev_step)
-
-
-# --- RECRUITER DASHBOARD ---
+# --- POLISHED RECRUITER DASHBOARD UI ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
     with st.sidebar.expander("🎚 Customize QoH Weights", expanded=True):
