@@ -99,7 +99,6 @@ def calculate_qoh_score(skill_count, ref, behav, jd_scores):
     return final, {"Skills": skills, "References": ref, "Behavior": behav, "JD Match": avg_jd}
 
 # --- PROFILE MANAGEMENT ---
-
 def profile_management():
     st.title("👤 Profile Management")
     user_email = st.session_state.supabase_user.email
@@ -152,7 +151,6 @@ def profile_management():
                 st.rerun()
             except Exception:
                 st.error("Failed to delete profile.")
-
     st.title("👤 Profile Management")
     user_email = st.session_state.supabase_user.email
     try:
@@ -321,8 +319,7 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    
-elif step == 9:
+    elif step == 9:
     st.markdown("### 🚀 Step 10: Growth Roadmap")
     prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
     try:
@@ -375,7 +372,6 @@ elif step == 9:
             st.session_state.profile_selected = False
             st.session_state.profile_saved = False
             st.rerun()
-
         st.markdown("### 🚀 Step 10: Growth Roadmap")
         prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
         try:
