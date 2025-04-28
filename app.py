@@ -285,21 +285,22 @@ def candidate_journey():
 
         st.markdown("### 📩 Save Your Profile")
     if st.button("Save My Profile"):
-        selected_skills = st.session_state.get("selected_skills", [])
-        jd_scores_list = st.session_state.get("jd_scores", [])
+        selected_skills = st.session_state.get("selected_skills", ["Python", "SQL"])
+        jd_scores_list = st.session_state.get("jd_scores", [75, 85])
         user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
+        growth_roadmap = st.session_state.get("growth_roadmap", "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative")
         profile_data = {
             "user_email": user_email,
-            "name": st.session_state.get("cand_name", ""),
-            "job_title": st.session_state.get("cand_title", ""),
-            "resume_text": st.session_state.get("resume_text", ""),
+            "name": st.session_state.get("cand_name", "Demo User"),
+            "job_title": st.session_state.get("cand_title", "Demo Role"),
+            "resume_text": st.session_state.get("resume_text", "This is a demo resume."),
             "selected_skills": selected_skills,
-            "behavior_score": st.session_state.get("behavior_score", 0),
+            "behavior_score": st.session_state.get("behavior_score", 70),
             "reference_data": {"mock": "data"},
             "education": {"mock": "data"},
-            "qoh_score": st.session_state.get("qoh_score", 0),
+            "qoh_score": st.session_state.get("qoh_score", 80),
             "jd_scores": jd_scores_list,
-            "growth_roadmap": st.session_state.growth_roadmap,
+            "growth_roadmap": growth_roadmap,
             "timestamp": datetime.utcnow().isoformat()
         }
         try:
@@ -310,7 +311,6 @@ def candidate_journey():
                 st.error(f"❌ Failed to save profile: {result}")
         except Exception as e:
             st.error(f"❌ Error saving profile: {e}")
-        except Exception as e:
             st.error(f"❌ Error saving profile: {e}")
 
 
