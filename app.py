@@ -304,14 +304,14 @@ def candidate_journey():
                 "timestamp": datetime.utcnow().isoformat()
             }
 
-            try:
-                result = supabase.table("profiles").insert(profile_data).execute()
+        try:
+            result = supabase.table("profiles").insert(profile_data).execute()
             if result.error is None:
                 st.success("✅ Profile saved successfully!")
             else:
                 st.error(f"❌ Failed to save profile: {result.error}")
-            except Exception as e:
-                st.error(f"❌ Error saving profile: {e}")
+        except Exception as e:
+            st.error(f"❌ Error saving profile: {e}")
 
 
 # --- RECRUITER DASHBOARD ---
