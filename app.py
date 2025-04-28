@@ -62,9 +62,9 @@ def extract_skills_from_resume(text):
             temperature=0.3
         )
         return ast.literal_eval(res.choices[0].message.content.strip())
-    except:
-        return ["Python", "SQL", "Excel"]
-
+            except Exception as e:
+                st.session_state.login_success = False
+                st.error(f"Login failed. Please check your credentials. {e}")
 def extract_contact_info(text):
     prompt = f"From this resume, extract the full name, email, and job title. Return a Python dictionary with keys: name, email, title.\n\n{text}"
     try:
@@ -74,9 +74,9 @@ def extract_contact_info(text):
             temperature=0.2
         )
         return ast.literal_eval(res.choices[0].message.content.strip())
-    except:
-        return {"name": "", "email": "", "title": ""}
-
+            except Exception as e:
+                st.session_state.login_success = False
+                st.error(f"Login failed. Please check your credentials. {e}")
 def match_resume_to_jds(resume_text, jd_texts):
     prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following JDs:\n"
     for i, jd in enumerate(jd_texts):
@@ -89,9 +89,9 @@ def match_resume_to_jds(resume_text, jd_texts):
             temperature=0.2,
         )
         return ast.literal_eval(res.choices[0].message.content.strip())
-    except:
-        return [np.random.randint(70, 90) for _ in jd_texts]
-
+            except Exception as e:
+                st.session_state.login_success = False
+                st.error(f"Login failed. Please check your credentials. {e}")
 def calculate_qoh_score(skill_count, ref, behav, jd_scores):
     avg_jd = round(sum(jd_scores) / len(jd_scores), 1)
     skills = skill_count * 5
@@ -278,9 +278,9 @@ def candidate_journey():
                 temperature=0.7
             )
             roadmap = response.choices[0].message.content.strip()
-        except:
-            roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Prepare for promotion"
-        st.markdown(roadmap)
+            except Exception as e:
+                st.session_state.login_success = False
+                st.error(f"Login failed. Please check your credentials. {e}")
         st.success("🎉 Complete!")
 
         st.markdown("### 📩 Save Your Profile")
@@ -410,14 +410,14 @@ def login_ui():
                 st.session_state.login_success = True
                 st.success("✅ Logged in successfully.")
                 st.rerun()
-            except:
+            except Exception as e:
                 st.session_state.login_success = False
-                st.error("Login failed. Please check your credentials.")
+                st.error(f"Login failed. Please check your credentials. {e}")
                 supabase.auth.sign_up({"email": email, "password": password})
                 st.success("✅ Account created! Check your email.")
-            except:
-                st.error("Signup failed. Try again with a different email.")
-
+            except Exception as e:
+                st.session_state.login_success = False
+                st.error(f"Login failed. Please check your credentials. {e}")
 # --- ROUTING ---
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
