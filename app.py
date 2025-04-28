@@ -128,9 +128,9 @@ def profile_management():
             except Exception:
                 st.error("Failed to delete profile.")
 
-# --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
+
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
 
@@ -143,13 +143,21 @@ def candidate_journey():
         st.text_input("Email", key="cand_email")
         st.text_input("Target Job Title", key="cand_title")
         uploaded = st.file_uploader("Upload Resume (PDF/TXT)", type=["pdf", "txt"])
+
         if uploaded:
-            text = uploaded.read().decode("utf-8") if uploaded.type == "text/plain" else \
-                "\n".join([p.extract_text() for p in pdfplumber.open(uploaded).pages if p.extract_text()])
-            st.session_state.resume_text = text
-            st.session_state.resume_skills = extract_skills_from_resume(text)
-            st.session_state["resume_contact"] = extract_contact_info(text)
-            st.success("✅ Resume parsed.")
+            try:
+                if uploaded.type == "text/plain":
+                    text = uploaded.read().decode("utf-8")
+                else:
+                    with pdfplumber.open(uploaded) as pdf:
+                        text = "\n".join([p.extract_text() or "" for p in pdf.pages])
+                st.session_state.resume_text = text
+                st.session_state.resume_skills = extract_skills_from_resume(text)
+                st.session_state["resume_contact"] = extract_contact_info(text)
+                st.success("✅ Resume parsed.")
+            except Exception as e:
+                st.error(f"❌ Could not parse resume: {e}")
+
         st.button("Next", on_click=next_step)
 
     elif step == 1:
@@ -244,12 +252,19 @@ def candidate_journey():
         behavior = st.session_state.get("behavior_score", 50)
         ref_score = 90
         qoh, breakdown = calculate_qoh_score(skill_count, ref_score, behavior, jd_scores)
+
         st.metric("📈 QoH Score", f"{qoh}/100")
         st.session_state.qoh_score = qoh
-        st.session_state.profiles[st.session_state.active_profile]["qoh"] = qoh
-        st.session_state.profiles[st.session_state.active_profile]["progress"]["Quality of Hire"] = True
+
+        # Ensure profile is initialized
+        ensure_profile_initialized(st.session_state.active_profile)
+        profile_data_local = st.session_state.profiles[st.session_state.active_profile]
+        profile_data_local["qoh"] = qoh
+        profile_data_local["progress"]["Quality of Hire"] = True
+
         for k, v in breakdown.items():
             st.write(f"**{k}**: {v}/100")
+
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
@@ -265,10 +280,12 @@ def candidate_journey():
             roadmap = response.choices[0].message.content.strip()
         except:
             roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Prepare for promotion"
+
         st.markdown(roadmap)
         st.success("🎉 Complete!")
 
         st.markdown("### 📩 Save Your Profile")
+
         if st.button("Save My Profile"):
             selected_skills = st.session_state.get("selected_skills", [])
             jd_scores_list = st.session_state.get("jd_scores", [])
