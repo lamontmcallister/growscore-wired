@@ -417,12 +417,15 @@ if st.session_state.supabase_user:
     if view == "Candidate":
         if "active_profile" not in st.session_state:
             profile_management()
-
 # --- ROUTING ---
 if st.session_state.supabase_user:
-    if "active_profile" not in st.session_state:
-        profile_management()
+    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
+    if view == "Candidate":
+        if "active_profile" not in st.session_state:
+            profile_management()
+        else:
+            candidate_journey()
     else:
-        candidate_journey()
+        recruiter_dashboard()
 else:
     login_ui()
