@@ -407,12 +407,12 @@ def login_ui():
                 st.session_state.supabase_user = res.user
                 st.session_state.supabase_session = res.session
                 st.session_state.profile_selected = False
+                st.session_state.login_success = True
                 st.success("✅ Logged in successfully.")
                 st.rerun()
             except:
+                st.session_state.login_success = False
                 st.error("Login failed. Please check your credentials.")
-        elif mode == "Sign Up" and st.button("Register"):
-            try:
                 supabase.auth.sign_up({"email": email, "password": password})
                 st.success("✅ Account created! Check your email.")
             except:
