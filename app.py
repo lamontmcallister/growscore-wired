@@ -214,7 +214,7 @@ def candidate_journey():
     elif step == 4:
         st.markdown("### 📣 Step 5: Backchannel (Optional)")
         st.text_input("Name")
-        st.text_input("Email")
+        email = st.text_input("Email", key="login_email")
         st.text_area("Message or Topic for Feedback")
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
@@ -397,9 +397,9 @@ def login_ui():
 
     with st.sidebar:
         st.header("🔐 Log In or Create Account")
-        mode = st.radio("Choose Mode", ["Login", "Sign Up"])
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
+        mode = st.radio("Choose Mode", ["Login", "Sign Up"], key="login_mode")
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_password")
 
         if mode == "Login" and st.button("Log In"):
             try:
@@ -428,55 +428,5 @@ if st.session_state.supabase_user:
             candidate_journey()
     else:
         recruiter_dashboard()
-else:
-    login_ui()
-
-
-# --- ML VISION DASHBOARD ---
-import pandas as pd
-import numpy as np
-
-def ml_dashboard():
-    st.title("📊 Machine Learning Dashboard (Vision)")
-
-    st.markdown("### 🚀 Data-Driven QoH Refinement")
-    st.write("This is a simulation of how more data improves our predictive Quality of Hire (QoH) scoring over time.")
-
-    # Simulated QoH Improvement Over Time
-    dates = pd.date_range(start="2024-01-01", periods=12, freq='M')
-    qoh_scores = np.linspace(60, 90, 12) + np.random.normal(0, 2, 12)
-    df_qoh = pd.DataFrame({"Date": dates, "QoH Score": qoh_scores})
-    st.line_chart(df_qoh.set_index("Date"))
-
-    st.markdown("### 📈 Skill Impact Analysis (Simulated)")
-    skills = ["Python", "SQL", "Leadership", "Data Analysis", "Communication"]
-    impact = [20, 15, 25, 18, 22]
-    df_skills = pd.DataFrame({"Skill": skills, "Impact (%)": impact})
-    st.bar_chart(df_skills.set_index("Skill"))
-
-    st.markdown("### 🧠 ML Roadmap")
-    st.markdown("""
-    - **Now**: Static QoH Scoring.
-    - **Q2 2024**: Start collecting success data post-hire.
-    - **Q3 2024**: Train ML model on historical profiles.
-    - **Q4 2024**: Live ML-based QoH Predictions.
-    - **2025**: AI-driven hiring assistant, fully adaptive.
-    """)
-
-    st.success("🚀 Our system learns and evolves with every profile saved. More data = smarter hiring.")
-
-# --- ROUTING EXTENSION ---
-# Add ML Dashboard as a view option
-if st.session_state.supabase_user:
-    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter", "ML Vision"])
-    if view == "Candidate":
-        if not st.session_state.get("profile_selected"):
-            profile_management()
-        else:
-            candidate_journey()
-    elif view == "Recruiter":
-        recruiter_dashboard()
-    elif view == "ML Vision":
-        ml_dashboard()
 else:
     login_ui()
