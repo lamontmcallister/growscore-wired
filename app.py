@@ -1,6 +1,5 @@
 import streamlit as st
 import openai
-
 import ast
 import pdfplumber
 import pandas as pd
@@ -119,34 +118,23 @@ def calculate_qoh_score(skill_count, ref, behav, jd_scores):
     final = round((skills + ref + behav + avg_jd) / 4, 1)
     return final, {"Skills": skills, "References": ref, "Behavior": behav, "JD Match": avg_jd}
 
-# --- PROFILE MANAGEMENT ---
-def profile_management():
-    st.title("👤 Profile Management")
-    user_email = st.session_state.supabase_user.user.email
-    try:
-        profiles = supabase.table("profiles").select("*").eq("user_email", user_email).execute()
-    except Exception as e:
-        st.error(f"❌ Supabase query error: {e}")
-        st.stop()
+# --- PROFILE SELECTOR ---
+def profile_selector():
+    st.markdown("### 👤 Select or Create a Candidate Profile")
 
-    profile_names = [p["name"] for p in profiles.data] if profiles.data else []
-    st.write("Choose a profile or create a new one:")
+    profile_names = list(st.session_state.profiles.keys())
+    new_profile = st.text_input("New Profile Name")
+
+    if new_profile and st.button("Create Profile"):
+        st.session_state.profiles[new_profile] = {"progress": {}, "qoh": None}
+        st.session_state.active_profile = new_profile
+        st.success(f"Created and selected: {new_profile}")
+
     if profile_names:
-        selected = st.selectbox("Select Existing Profile", ["Create New"] + profile_names)
-    else:
-        selected = "Create New"
-        st.info("No profiles found. Create a new one.")
-    if selected == "Create New":
-        new_name = st.text_input("Enter New Profile Name")
-        if st.button("Start with New Profile") and new_name:
-            st.session_state.active_profile = new_name
-            st.session_state.step = 0
-            st.rerun()
-    elif selected:
-        st.session_state.active_profile = selected
-        st.session_state.step = 0
-        if st.button(f"Edit Profile: {selected}"):
-            st.rerun()
+        selected = st.selectbox("Or choose existing:", profile_names)
+        if st.button("Load Profile"):
+            st.session_state.active_profile = selected
+            st.success(f"Loaded profile: {selected}")
 
 # --- CANDIDATE JOURNEY ---
 def candidate_journey():
@@ -422,8 +410,20 @@ def login_ui():
             except Exception as e:
                 st.error(f"Signup failed: {e}")
 
+
 # --- ROUTING ---
 if st.session_state.supabase_user:
+    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
+    if view == "Candidate":
+        if "active_profile" not in st.session_state:
+            profile_management()
+        else:
+            candidate_journey()
+    else:
+        recruiter_dashboard()
+else:
+    login_ui()
+
     view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
     if view == "Candidate":
         profile_selector()
