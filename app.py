@@ -284,32 +284,32 @@ def candidate_journey():
         st.success("🎉 Complete!")
 
         st.markdown("### 📩 Save Your Profile")
-        if st.button("Save My Profile"):
-            selected_skills = st.session_state.get("selected_skills", [])
-            jd_scores_list = st.session_state.get("jd_scores", [])
-            user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
-
-            profile_data = {
-                "user_email": user_email,
-                "name": st.session_state.get("cand_name", ""),
-                "job_title": st.session_state.get("cand_title", ""),
-                "resume_text": st.session_state.get("resume_text", ""),
-                "selected_skills": selected_skills,
-                "behavior_score": st.session_state.get("behavior_score", 0),
-                "reference_data": {"mock": "data"},
-                "education": {"mock": "data"},
-                "qoh_score": st.session_state.get("qoh_score", 0),
-                "jd_scores": jd_scores_list,
-                "growth_roadmap": roadmap,
-                "timestamp": datetime.utcnow().isoformat()
-            }
-
+    if st.button("Save My Profile"):
+        selected_skills = st.session_state.get("selected_skills", [])
+        jd_scores_list = st.session_state.get("jd_scores", [])
+        user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
+        profile_data = {
+            "user_email": user_email,
+            "name": st.session_state.get("cand_name", ""),
+            "job_title": st.session_state.get("cand_title", ""),
+            "resume_text": st.session_state.get("resume_text", ""),
+            "selected_skills": selected_skills,
+            "behavior_score": st.session_state.get("behavior_score", 0),
+            "reference_data": {"mock": "data"},
+            "education": {"mock": "data"},
+            "qoh_score": st.session_state.get("qoh_score", 0),
+            "jd_scores": jd_scores_list,
+            "growth_roadmap": st.session_state.growth_roadmap,
+            "timestamp": datetime.utcnow().isoformat()
+        }
         try:
             result = supabase.table("profiles").insert(profile_data).execute()
             if result.data:
                 st.success("✅ Profile saved successfully!")
             else:
                 st.error(f"❌ Failed to save profile: {result}")
+        except Exception as e:
+            st.error(f"❌ Error saving profile: {e}")
         except Exception as e:
             st.error(f"❌ Error saving profile: {e}")
 
