@@ -385,8 +385,6 @@ def recruiter_dashboard():
 
 
 # --- LOGIN UI ---
-def login_ui():
-    st.markdown("##")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
@@ -429,8 +427,6 @@ if st.session_state.supabase_user:
     else:
         recruiter_dashboard()
 else:
-    login_ui()
-
 # --- ML VISION DASHBOARD ---
 import pandas as pd
 import numpy as np
@@ -479,19 +475,3 @@ if st.session_state.supabase_user:
     elif view == "ML Vision":
         ml_dashboard()
 else:
-    login_ui()
-
-# --- UNIFIED ROUTING WITH ML VISION ---
-if st.session_state.supabase_user:
-    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter", "ML Vision"], key="portal_choice")
-    if view == "Candidate":
-        if not st.session_state.get("profile_selected"):
-            profile_management()
-        else:
-            candidate_journey()
-    elif view == "Recruiter":
-        recruiter_dashboard()
-    elif view == "ML Vision":
-        ml_dashboard()
-else:
-    login_ui()
