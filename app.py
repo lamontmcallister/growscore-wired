@@ -413,19 +413,16 @@ def login_ui():
 
 # --- ROUTING ---
 if st.session_state.supabase_user:
+    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
+    if view == "Candidate":
+        if "active_profile" not in st.session_state:
+            profile_management()
+
+# --- ROUTING ---
+if st.session_state.supabase_user:
     if "active_profile" not in st.session_state:
         profile_management()
     else:
         candidate_journey()
-else:
-    login_ui()
-
-    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
-    if view == "Candidate":
-        profile_selector()
-        if st.session_state.active_profile:
-            candidate_journey()
-    else:
-        recruiter_dashboard()
 else:
     login_ui()
