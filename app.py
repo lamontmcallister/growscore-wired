@@ -449,36 +449,36 @@ def login_ui():
         st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
         st.markdown("### From Rejection to Revolution")
 
-        if "login_attempted" not in st.session_state:
-            st.session_state.login_attempted = False
-        if "login_success" not in st.session_state:
-            st.session_state.login_success = False
+    if "login_attempted" not in st.session_state:
+        st.session_state.login_attempted = False
+    if "login_success" not in st.session_state:
+        st.session_state.login_success = False
 
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
 
-        if st.button("Log In"):
-            st.session_state.login_attempted = True
-            if email and password:
-                try:
-                    auth_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                    if auth_response.user:
-                        st.session_state.supabase_user = auth_response.user
-                        st.session_state.supabase_session = auth_response.session
-                        st.session_state.login_success = True
-                        st.experimental_rerun()
-                    else:
-                        st.session_state.login_success = False
-                except Exception as e:
+    if st.button("Log In"):
+        st.session_state.login_attempted = True
+        if email and password:
+            try:
+                auth_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                if auth_response.user:
+                    st.session_state.supabase_user = auth_response.user
+                    st.session_state.supabase_session = auth_response.session
+                    st.session_state.login_success = True
+                    st.experimental_rerun()
+                else:
                     st.session_state.login_success = False
-            else:
-                st.warning("Please enter your email and password.")
+            except Exception as e:
+                st.session_state.login_success = False
+        else:
+            st.warning("Please enter your email and password.")
 
-        if st.session_state.login_attempted:
-            if st.session_state.login_success:
-                st.success("✅ Logged in successfully.")
-            else:
-                st.error("❌ Login failed. Please check your credentials.")
+    if st.session_state.login_attempted:
+        if st.session_state.login_success:
+            st.success("✅ Logged in successfully.")
+        else:
+            st.error("❌ Login failed. Please check your credentials.")
 
 st.markdown("##")
     col1, col2, col3 = st.columns([1, 2, 1])
