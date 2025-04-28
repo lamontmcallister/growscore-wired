@@ -33,11 +33,22 @@ def load_custom_css():
 load_custom_css()
 
 # --- SESSION STATE ---
-for k in ["supabase_session", "supabase_user", "step", "profiles", "active_profile"]:
+for k in ["supabase_session", "supabase_user", "step", "profiles", "active_profile", "profile_selected"]:
     if k not in st.session_state:
-        st.session_state[k] = 0 if k == "step" else {} if k == "profiles" else None
+        if k == "step":
+            st.session_state[k] = 0
+        elif k == "profiles":
+            st.session_state[k] = {}
+        elif k == "profile_selected":
+            st.session_state[k] = False
+        else:
+            st.session_state[k] = None
 
-# --- UTILS ---
+# --- HELPER FUNCTIONS ---
+def ensure_profile_initialized(profile_name):
+    if profile_name not in st.session_state.profiles:
+        st.session_state.profiles[profile_name] = {"progress": {}}
+
 skills_pool = [
     "Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
     "Communication", "Strategic Planning", "Excel", "Project Management"
@@ -111,10 +122,12 @@ def profile_management():
             else:
                 st.session_state.active_profile = new_name
                 st.session_state.step = 0
+                st.session_state.profile_selected = True
                 st.rerun()
     elif selected:
         st.session_state.active_profile = selected
         st.session_state.step = 0
+        st.session_state.profile_selected = True
         profile_data = next((p for p in profiles.data if p["name"] == selected), {})
         st.write(f"**Job Title**: {profile_data.get('job_title', 'N/A')}")
         st.write(f"**QoH Score**: {profile_data.get('qoh_score', 'N/A')}")
@@ -124,10 +137,13 @@ def profile_management():
             try:
                 supabase.table("profiles").delete().eq("name", selected).eq("user_email", user_email).execute()
                 st.success(f"Deleted profile: {selected}")
+                st.session_state.profile_selected = False
+                st.session_state.active_profile = None
                 st.rerun()
             except Exception:
                 st.error("Failed to delete profile.")
 
+# --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
 
@@ -319,7 +335,6 @@ def candidate_journey():
 # --- RECRUITER DASHBOARD ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
-
     with st.sidebar.expander("🎚 Adjust Quality of Hire Weights", expanded=True):
         w_jd = st.slider("JD Match", 0, 100, 25)
         w_ref = st.slider("References", 0, 100, 25)
@@ -333,30 +348,18 @@ def recruiter_dashboard():
 
     df = pd.DataFrame([
         {
-            "Candidate": "Lamont",
-            "JD Match": 88,
-            "Reference": 90,
-            "Behavior": 84,
-            "Skill": 92,
-            "Gaps": "Strategic Planning",
+            "Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84,
+            "Skill": 92, "Gaps": "Strategic Planning",
             "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education, ✅ HR"
         },
         {
-            "Candidate": "Jasmine",
-            "JD Match": 82,
-            "Reference": 78,
-            "Behavior": 90,
-            "Skill": 80,
-            "Gaps": "Leadership",
+            "Candidate": "Jasmine", "JD Match": 82, "Reference": 78, "Behavior": 90,
+            "Skill": 80, "Gaps": "Leadership",
             "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"
         },
         {
-            "Candidate": "Andre",
-            "JD Match": 75,
-            "Reference": 65,
-            "Behavior": 70,
-            "Skill": 78,
-            "Gaps": "Communication",
+            "Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70,
+            "Skill": 78, "Gaps": "Communication",
             "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"
         }
     ])
@@ -385,7 +388,6 @@ def recruiter_dashboard():
         else:
             st.write(f"{row['Candidate']}: Interview-ready.")
 
-
 # --- LOGIN UI ---
 def login_ui():
     st.markdown("##")
@@ -408,6 +410,7 @@ def login_ui():
                 res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state.supabase_user = res.user
                 st.session_state.supabase_session = res.session
+                st.session_state.profile_selected = False
                 st.success("✅ Logged in successfully.")
                 st.rerun()
             except:
@@ -423,9 +426,10 @@ def login_ui():
 if st.session_state.supabase_user:
     view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter"])
     if view == "Candidate":
-        profile_management()
-        if st.session_state.active_profile:
-            candidate_journey()
+        if not st.session_state.get("profile_selected"):
+            profile_management()
+        else:
+            candidate_journey()  # Insert full candidate_journey here
     else:
         recruiter_dashboard()
 else:
