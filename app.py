@@ -2,8 +2,6 @@ import streamlit as st
 import openai
 import pdfplumber
 import pandas as pd
-import ast
-import numpy as np
 import json
 from datetime import datetime
 from supabase import create_client, Client
@@ -49,19 +47,15 @@ def login_section():
 # --- PROFILE MANAGEMENT ---
 def profile_management():
     st.title("👤 Profile Management")
-
     user_email = st.session_state.supabase_user.user.email
     profiles = supabase.table("profiles").select("*").eq("user_email", user_email).execute()
     profile_names = [p["name"] for p in profiles.data] if profiles.data else []
-
     st.write("Choose a profile or create a new one:")
-
     if profile_names:
         selected = st.selectbox("Select Existing Profile", ["Create New"] + profile_names)
     else:
         selected = "Create New"
         st.info("No profiles found. Create a new one.")
-
     if selected == "Create New":
         new_name = st.text_input("Enter New Profile Name")
         if st.button("Start with New Profile") and new_name:
@@ -74,7 +68,7 @@ def profile_management():
         if st.button(f"Edit Profile: {selected}"):
             st.experimental_rerun()
 
-# --- CANDIDATE JOURNEY (SIMPLIFIED) ---
+# --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
     def next_step(): st.session_state.step = step + 1
@@ -107,7 +101,13 @@ def candidate_journey():
                 "user_email": user_email,
                 "name": st.session_state.active_profile,
                 "job_title": st.session_state.get("cand_title", ""),
-                "selected_skills": json.dumps(st.session_state.get("selected_skills", [])),
+                "selected_skills": st.session_state.get("selected_skills", []),
+                "behavior_score": st.session_state.get("behavior_score", 0),
+                "reference_data": json.dumps({"mock": "data"}),
+                "education": json.dumps({"mock": "data"}),
+                "qoh_score": st.session_state.get("qoh_score", 0),
+                "jd_scores": st.session_state.get("jd_scores", []),
+                "growth_roadmap": st.session_state.get("growth_roadmap_text", ""),
                 "timestamp": datetime.utcnow().isoformat()
             }
             try:
