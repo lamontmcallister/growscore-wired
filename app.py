@@ -1,4 +1,3 @@
-import json
 import streamlit as st
 import openai
 import ast
@@ -295,12 +294,12 @@ def candidate_journey():
                 "name": st.session_state.get("cand_name", ""),
                 "job_title": st.session_state.get("cand_title", ""),
                 "resume_text": st.session_state.get("resume_text", ""),
-                "selected_skills": json.dumps(selected_skills),
+                "selected_skills": selected_skills,
                 "behavior_score": st.session_state.get("behavior_score", 0),
-                "reference_data": json.dumps({"mock": "data"}),
-                "education": json.dumps({"mock": "data"}),
+                "reference_data": {"mock": "data"},
+                "education": {"mock": "data"},
                 "qoh_score": st.session_state.get("qoh_score", 0),
-                "jd_scores": json.dumps(jd_scores_list),
+                "jd_scores": jd_scores_list,
                 "growth_roadmap": roadmap,
                 "timestamp": datetime.utcnow().isoformat()
             }
