@@ -16,8 +16,9 @@ OPENAI_KEY = st.secrets["openai"]["key"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_KEY
 
-# --- AUTH ---
+# --- AUTH WITH LOGO ---
 def login_section():
+    st.sidebar.image("YOUR_LOGO_IMAGE_PATH.PNG", use_column_width=True)  # Replace with correct path
     st.sidebar.title("Login / Signup")
     auth_mode = st.sidebar.radio("Choose", ["Login", "Sign Up"])
     if auth_mode == "Sign Up":
@@ -45,7 +46,7 @@ def login_section():
             st.session_state.supabase_user = None
             st.rerun()
 
-# --- PROFILE MANAGEMENT --- (UNCHANGED)
+# --- PROFILE MANAGEMENT (UNCHANGED) ---
 def profile_management():
     st.title("👤 Profile Management")
     user_email = st.session_state.supabase_user.user.email
@@ -74,7 +75,7 @@ def profile_management():
         if st.button(f"Edit Profile: {selected}"):
             st.rerun()
 
-# --- POLISHED CANDIDATE JOURNEY UI ---
+# --- POLISHED CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
 
@@ -84,52 +85,22 @@ def candidate_journey():
     st.header(f"🚀 Candidate Journey – Profile: {st.session_state.active_profile}")
     st.progress((step + 1) / 8)
 
-    if step == 0:
-        st.subheader("📄 Step 1: Contact Info + Resume Upload")
-        st.text_input("Full Name", key="cand_name")
-        st.text_input("Target Job Title", key="cand_title")
-        uploaded = st.file_uploader("Upload Resume (PDF/TXT)", type=["pdf", "txt"])
-        if uploaded:
-            text = uploaded.read().decode("utf-8") if uploaded.type == "text/plain" else \
-                "\n".join([p.extract_text() for p in pdfplumber.open(uploaded).pages if p.extract_text()])
-            st.session_state.resume_text = text
-            st.success("✅ Resume parsed.")
-        st.button("Next ➡️", on_click=next_step)
-
-    elif step == 1:
-        st.subheader("🛠 Step 2: Skills + Behavior Survey")
-        skills_pool = ["Python", "SQL", "Leadership", "Data Analysis", "Communication"]
-        selected = st.multiselect("Select your skills:", skills_pool)
-        st.session_state.selected_skills = selected
-
-        st.markdown("#### Behavior Survey")
-        opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
-        score_map = {opt: i + 1 for i, opt in enumerate(opts)}
-        score_total = 0
-        for i, q in enumerate([
-            "Meets deadlines consistently",
-            "Collaborates well in teams",
-            "Adapts quickly to change",
-            "Demonstrates leadership",
-            "Communicates effectively"
-        ]):
-            response = st.radio(q, opts, index=2, key=f"behavior_{i}")
-            score_total += score_map[response]
-        st.session_state.behavior_score = round((score_total / 25) * 100, 1)
-
+    if step == 2:
+        st.subheader("🤝 Step 3: References")
+        for idx in range(1, 3):
+            st.text_input(f"Reference {idx} Name", key=f"ref{idx}_name")
+            st.text_input(f"Reference {idx} Email", key=f"ref{idx}_email")
+            st.selectbox(f"Trait for Ref {idx}", ["Leadership", "Communication", "Teamwork"], key=f"ref{idx}_trait")
+        st.text_area("Backchannel Notes (Private)", key="backchannel_notes")
         st.button("⬅️ Back", on_click=prev_step)
         st.button("Next ➡️", on_click=next_step)
 
-# --- POLISHED RECRUITER DASHBOARD UI ---
+    # Continue remaining steps...
+
+# --- RECRUITER DASHBOARD ENHANCED ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
-    with st.sidebar.expander("🎚 Customize QoH Weights", expanded=True):
-        w_jd = st.slider("JD Match", 0, 100, 25)
-        w_ref = st.slider("References", 0, 100, 25)
-        w_beh = st.slider("Behavior", 0, 100, 25)
-        w_skill = st.slider("Skills", 0, 100, 25)
-
-    total_weight = max(1, w_jd + w_ref + w_beh + w_skill)
+    show_verified = st.checkbox("Show Only Verified Candidates", value=False)
 
     try:
         profiles = supabase.table("profiles").select("*").execute()
@@ -140,18 +111,20 @@ def recruiter_dashboard():
 
     if data:
         df = pd.DataFrame(data)
-        df["skills_score"] = df["selected_skills"].apply(lambda x: len(x) * 5 if isinstance(x, list) else 0)
-        df["avg_jd"] = df["jd_scores"].apply(lambda x: sum(x)/len(x) if isinstance(x, list) and len(x) > 0 else 0)
-        df["QoH"] = (
-            df["avg_jd"] * w_jd +
-            df["skills_score"] * w_skill +
-            df["behavior_score"] * w_beh +
-            90 * w_ref
-        ) / total_weight
-        df = df.sort_values("QoH", ascending=False)
+        df["Verified"] = df.get("verified", False)
+        if show_verified:
+            df = df[df["Verified"] == True]
 
-        st.metric("📊 Average QoH", f"{df['QoH'].mean():.1f}/100")
-        st.dataframe(df[["name", "job_title", "avg_jd", "skills_score", "behavior_score", "QoH"]])
+        for idx, row in df.iterrows():
+            st.subheader(f"{row['name']} – {row['job_title']}")
+            st.text(f"QoH: {row['qoh_score']} / Behavior: {row['behavior_score']} / JD Avg: {row['jd_scores']}")
+            st.text(f"Verified: {'✅' if row['Verified'] else '❌'}")
+            st.text(f"Backchannel Note: {row.get('backchannel_notes', 'None')}")
+
+            if st.button(f"Toggle Verification – {row['name']}", key=f"verify_{idx}"):
+                new_status = not row["Verified"]
+                supabase.table("profiles").update({"verified": new_status}).eq("name", row["name"]).execute()
+                st.experimental_rerun()
     else:
         st.info("No profiles found.")
 
