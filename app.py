@@ -306,10 +306,10 @@ def candidate_journey():
 
         try:
             result = supabase.table("profiles").insert(profile_data).execute()
-            if result.error is None:
+            if result.data:
                 st.success("✅ Profile saved successfully!")
             else:
-                st.error(f"❌ Failed to save profile: {result.error}")
+                st.error(f"❌ Failed to save profile: {result}")
         except Exception as e:
             st.error(f"❌ Error saving profile: {e}")
 
