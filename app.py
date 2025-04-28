@@ -4,7 +4,6 @@ import ast
 import pdfplumber
 import pandas as pd
 import numpy as np
-import json
 from supabase import create_client, Client
 from datetime import datetime
 
@@ -146,7 +145,6 @@ def profile_management():
 # --- CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
-
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
 
@@ -159,21 +157,13 @@ def candidate_journey():
         st.text_input("Email", key="cand_email")
         st.text_input("Target Job Title", key="cand_title")
         uploaded = st.file_uploader("Upload Resume (PDF/TXT)", type=["pdf", "txt"])
-
         if uploaded:
-            try:
-                if uploaded.type == "text/plain":
-                    text = uploaded.read().decode("utf-8")
-                else:
-                    with pdfplumber.open(uploaded) as pdf:
-                        text = "\n".join([p.extract_text() or "" for p in pdf.pages])
-                st.session_state.resume_text = text
-                st.session_state.resume_skills = extract_skills_from_resume(text)
-                st.session_state["resume_contact"] = extract_contact_info(text)
-                st.success("✅ Resume parsed.")
-            except Exception as e:
-                st.error(f"❌ Could not parse resume: {e}")
-
+            text = uploaded.read().decode("utf-8") if uploaded.type == "text/plain" else \
+                "\n".join([p.extract_text() for p in pdfplumber.open(uploaded).pages if p.extract_text()])
+            st.session_state.resume_text = text
+            st.session_state.resume_skills = extract_skills_from_resume(text)
+            st.session_state["resume_contact"] = extract_contact_info(text)
+            st.success("✅ Resume parsed.")
         st.button("Next", on_click=next_step)
 
     elif step == 1:
@@ -268,76 +258,65 @@ def candidate_journey():
         behavior = st.session_state.get("behavior_score", 50)
         ref_score = 90
         qoh, breakdown = calculate_qoh_score(skill_count, ref_score, behavior, jd_scores)
-
         st.metric("📈 QoH Score", f"{qoh}/100")
         st.session_state.qoh_score = qoh
-
-        # Ensure profile is initialized
-        ensure_profile_initialized(st.session_state.active_profile)
-        profile_data_local = st.session_state.profiles[st.session_state.active_profile]
-        profile_data_local["qoh"] = qoh
-        profile_data_local["progress"]["Quality of Hire"] = True
-
+        st.session_state.profiles[st.session_state.active_profile]["qoh"] = qoh
+        st.session_state.profiles[st.session_state.active_profile]["progress"]["Quality of Hire"] = True
         for k, v in breakdown.items():
             st.write(f"**{k}**: {v}/100")
-
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-elif step == 9:
-    st.markdown("### 🚀 Step 10: Growth Roadmap")
-    prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-        roadmap = response.choices[0].message.content.strip()
-    except:
-        roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Prepare for promotion"
-
-    # Save roadmap to session to ensure it's always accessible later
-    st.session_state.growth_roadmap = roadmap
-
-    st.markdown(roadmap)
-    st.success("🎉 Complete!")
-
-    st.markdown("### 📩 Save Your Profile")
-
-    if st.button("Save My Profile"):
-        selected_skills = st.session_state.get("selected_skills", [])
-        jd_scores_list = st.session_state.get("jd_scores", [])
-        user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
-
-        profile_data = {
-            "user_email": user_email,
-            "name": st.session_state.get("cand_name", ""),
-            "job_title": st.session_state.get("cand_title", ""),
-            "resume_text": st.session_state.get("resume_text", ""),
-            "selected_skills": selected_skills,
-            "behavior_score": st.session_state.get("behavior_score", 0),
-            "reference_data": {"mock": "data"},
-            "education": {"mock": "data"},
-            "qoh_score": st.session_state.get("qoh_score", 0),
-            "jd_scores": jd_scores_list,
-            "growth_roadmap": st.session_state.growth_roadmap,  # Use safe session value
-            "timestamp": datetime.utcnow().isoformat()
-        }
-
+    elif step == 9:
+        st.markdown("### 🚀 Step 10: Growth Roadmap")
+        prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
         try:
-            result = supabase.table("profiles").insert(profile_data).execute()
-            if result.status_code in [200, 201]:
-                st.success("✅ Profile saved successfully!")
-            else:
-                st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
-        except Exception as e:
-            st.error(f"❌ Error saving profile: {e}")
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            roadmap = response.choices[0].message.content.strip()
+        except:
+            roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Prepare for promotion"
+        st.markdown(roadmap)
+        st.success("🎉 Complete!")
+
+        st.markdown("### 📩 Save Your Profile")
+        if st.button("Save My Profile"):
+            selected_skills = st.session_state.get("selected_skills", [])
+            jd_scores_list = st.session_state.get("jd_scores", [])
+            user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
+
+            profile_data = {
+                "user_email": user_email,
+                "name": st.session_state.get("cand_name", ""),
+                "job_title": st.session_state.get("cand_title", ""),
+                "resume_text": st.session_state.get("resume_text", ""),
+                "selected_skills": json.dumps(selected_skills),
+                "behavior_score": st.session_state.get("behavior_score", 0),
+                "reference_data": json.dumps({"mock": "data"}),
+                "education": json.dumps({"mock": "data"}),
+                "qoh_score": st.session_state.get("qoh_score", 0),
+                "jd_scores": json.dumps(jd_scores_list),
+                "growth_roadmap": roadmap,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+            try:
+                result = supabase.table("profiles").insert(profile_data).execute()
+                if result.status_code in [200, 201]:
+                    st.success("✅ Profile saved successfully!")
+                else:
+                    st.error(f"❌ Failed to save profile. Status code: {result.status_code}")
+            except Exception as e:
+                st.error(f"❌ Error saving profile: {e}")
 
 
 # --- RECRUITER DASHBOARD ---
 def recruiter_dashboard():
     st.title("💼 Recruiter Dashboard")
+
     with st.sidebar.expander("🎚 Adjust Quality of Hire Weights", expanded=True):
         w_jd = st.slider("JD Match", 0, 100, 25)
         w_ref = st.slider("References", 0, 100, 25)
@@ -351,18 +330,30 @@ def recruiter_dashboard():
 
     df = pd.DataFrame([
         {
-            "Candidate": "Lamont", "JD Match": 88, "Reference": 90, "Behavior": 84,
-            "Skill": 92, "Gaps": "Strategic Planning",
+            "Candidate": "Lamont",
+            "JD Match": 88,
+            "Reference": 90,
+            "Behavior": 84,
+            "Skill": 92,
+            "Gaps": "Strategic Planning",
             "Verified": "✅ Resume, ✅ References, ✅ JD, 🟠 Behavior, ✅ Education, ✅ HR"
         },
         {
-            "Candidate": "Jasmine", "JD Match": 82, "Reference": 78, "Behavior": 90,
-            "Skill": 80, "Gaps": "Leadership",
+            "Candidate": "Jasmine",
+            "JD Match": 82,
+            "Reference": 78,
+            "Behavior": 90,
+            "Skill": 80,
+            "Gaps": "Leadership",
             "Verified": "✅ Resume, ⚠️ References, ✅ JD, ✅ Behavior, ✅ Education, ❌ HR"
         },
         {
-            "Candidate": "Andre", "JD Match": 75, "Reference": 65, "Behavior": 70,
-            "Skill": 78, "Gaps": "Communication",
+            "Candidate": "Andre",
+            "JD Match": 75,
+            "Reference": 65,
+            "Behavior": 70,
+            "Skill": 78,
+            "Gaps": "Communication",
             "Verified": "✅ Resume, ❌ References, ✅ JD, ⚠️ Behavior, ❌ Education, ❌ HR"
         }
     ])
@@ -390,6 +381,7 @@ def recruiter_dashboard():
             st.info(f"ℹ️ {row['Candidate']}: Gap in **{row['Gaps']}**.")
         else:
             st.write(f"{row['Candidate']}: Interview-ready.")
+
 
 # --- LOGIN UI ---
 def login_ui():
@@ -432,7 +424,7 @@ if st.session_state.supabase_user:
         if not st.session_state.get("profile_selected"):
             profile_management()
         else:
-            candidate_journey()  # Insert full candidate_journey here
+            candidate_journey()
     else:
         recruiter_dashboard()
 else:
