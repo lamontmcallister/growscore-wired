@@ -480,3 +480,18 @@ if st.session_state.supabase_user:
         ml_dashboard()
 else:
     login_ui()
+
+# --- UNIFIED ROUTING WITH ML VISION ---
+if st.session_state.supabase_user:
+    view = st.sidebar.radio("Choose Portal", ["Candidate", "Recruiter", "ML Vision"], key="portal_choice")
+    if view == "Candidate":
+        if not st.session_state.get("profile_selected"):
+            profile_management()
+        else:
+            candidate_journey()
+    elif view == "Recruiter":
+        recruiter_dashboard()
+    elif view == "ML Vision":
+        ml_dashboard()
+else:
+    login_ui()
