@@ -64,7 +64,7 @@ for k in ["supabase_session", "supabase_user", "step", "profiles", "active_profi
             st.session_state[k] = 0
         elif k == "profiles":
             st.session_state[k] = {}
-        else:
+         else:
             st.session_state[k] = None
 
 # --- UTILS ---
@@ -277,7 +277,7 @@ def candidate_journey():
         st.success("🎉 Complete!")
 
         st.markdown("### 📩 Save Your Profile")
-        if st.button("Save My Profile"):
+         if st.button("Save My Profile"):
             selected_skills = st.session_state.get("selected_skills", [])
             jd_scores_list = st.session_state.get("jd_scores", [])
             user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "anonymous"
@@ -373,7 +373,7 @@ def recruiter_dashboard():
             st.warning(f"⚠️ {row['Candidate']}: Weak reference.")
         elif row["Skill"] < 80:
             st.info(f"ℹ️ {row['Candidate']}: Gap in **{row['Gaps']}**.")
-        else:
+         else:
             st.write(f"{row['Candidate']}: Interview-ready.")
 
 # --- LOGIN UI ---
@@ -417,7 +417,7 @@ if st.session_state.supabase_user:
     if view == "Candidate":
         if "active_profile" not in st.session_state:
             profile_management()
-        else:
+         else:
             candidate_journey()
     else:
         recruiter_dashboard()
