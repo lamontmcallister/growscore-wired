@@ -421,35 +421,3 @@ if st.session_state.supabase_user:
         recruiter_dashboard()
 else:
     login_ui()
-
-def profile_management():
-    st.title("👤 Profile Management")
-    user_email = st.session_state.supabase_user.user.email
-    try:
-        profiles = supabase.table("profiles").select("*").eq("user_email", user_email).execute()
-    except Exception as e:
-        st.error(f"❌ Supabase query error: {e}")
-        st.stop()
-
-    profile_names = [p["name"] for p in profiles.data] if profiles.data else []
-    st.write("Choose a profile or create a new one:")
-    if profile_names:
-        selected = st.selectbox("Select Existing Profile", ["Create New"] + profile_names)
-    else:
-        selected = "Create New"
-        st.info("No profiles found. Create a new one.")
-    if selected == "Create New":
-        new_name = st.text_input("Enter New Profile Name")
-        if st.button("Start with New Profile") and new_name:
-            st.session_state.active_profile = new_name
-            st.session_state.step = 0
-            st.rerun()
-    elif selected:
-        st.session_state.active_profile = selected
-        st.session_state.step = 0
-        if st.button(f"Edit Profile: {selected}"):
-            st.rerun()
-# --- EXTENDED CANDIDATE JOURNEY ---
-
-
-
