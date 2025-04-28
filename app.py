@@ -7,7 +7,7 @@ from datetime import datetime
 from supabase import create_client, Client
 
 # --- CONFIG ---
-st.set_page_config(page_title="GrowScore Profile Flow", layout="wide")
+st.set_page_config(page_title="GrowScore Journey", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -47,7 +47,6 @@ def login_section():
 # --- PROFILE MANAGEMENT ---
 def profile_management():
     st.title("👤 Profile Management")
-
     user_email = st.session_state.supabase_user.user.email
     try:
         profiles = supabase.table("profiles").select("*").eq("user_email", user_email).execute()
@@ -74,14 +73,14 @@ def profile_management():
         if st.button(f"Edit Profile: {selected}"):
             st.experimental_rerun()
 
-# --- CANDIDATE JOURNEY ---
+# --- EXTENDED CANDIDATE JOURNEY ---
 def candidate_journey():
     step = st.session_state.get("step", 0)
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
 
     st.title(f"🚀 Candidate Journey – Profile: {st.session_state.active_profile}")
-    st.progress((step + 1) / 8)
+    st.progress((step + 1) / 5)
 
     if step == 0:
         st.markdown("### Step 1: Contact Info")
@@ -91,18 +90,47 @@ def candidate_journey():
 
     elif step == 1:
         st.markdown("### Step 2: Skills")
-        skills_pool = ["Python", "SQL", "Leadership", "Data Analysis"]
+        skills_pool = ["Python", "SQL", "Leadership", "Data Analysis", "Communication"]
         selected = st.multiselect("Choose your strongest skills:", skills_pool)
         st.session_state.selected_skills = selected
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
-    elif step == 7:
-        st.markdown("### Final Step: Save Profile")
+    elif step == 2:
+        st.markdown("### Step 3: Behavioral Survey")
+        opts = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
+        score_map = {opt: i + 1 for i, opt in enumerate(opts)}
+        score_total = 0
+        for i, q in enumerate([
+            "Meets deadlines consistently",
+            "Collaborates well in teams",
+            "Adapts quickly to change",
+            "Demonstrates leadership",
+            "Communicates effectively"
+        ]):
+            response = st.radio(q, opts, index=2, key=f"behavior_{i}")
+            score_total += score_map[response]
+        st.session_state.behavior_score = round((score_total / 25) * 100, 1)
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 3:
+        st.markdown("### Step 4: Job Match Simulation")
+        jd_scores = [85, 90]  # Placeholder simulated scores
+        st.session_state.jd_scores = jd_scores
+        st.write("Simulated Job Match Scores:", jd_scores)
+        st.button("Back", on_click=prev_step)
+        st.button("Next", on_click=next_step)
+
+    elif step == 4:
+        st.markdown("### Step 5: Growth Roadmap")
+        roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver project\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Promotion-ready"
+        st.markdown(roadmap)
+        st.session_state["growth_roadmap_text"] = roadmap
         st.success("🎉 Journey Complete!")
 
         if st.button("Save My Profile"):
-            user_email = st.session_state.supabase_user.user.email if st.session_state.get("supabase_user") else "anonymous"
+            user_email = st.session_state.supabase_user.user.email
             profile_data = {
                 "user_email": user_email,
                 "name": st.session_state.active_profile,
@@ -111,7 +139,7 @@ def candidate_journey():
                 "behavior_score": st.session_state.get("behavior_score", 0),
                 "reference_data": json.dumps({"mock": "data"}),
                 "education": json.dumps({"mock": "data"}),
-                "qoh_score": st.session_state.get("qoh_score", 0),
+                "qoh_score": 85,
                 "jd_scores": st.session_state.get("jd_scores", []),
                 "growth_roadmap": st.session_state.get("growth_roadmap_text", ""),
                 "timestamp": datetime.utcnow().isoformat()
