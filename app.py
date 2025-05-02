@@ -485,3 +485,10 @@ if st.session_state.supabase_user:
         recruiter_dashboard()
 else:
     login_ui()
+
+        elif step == 9:
+            st.subheader("📈 Step 10: Growth Roadmap")
+            st.markdown("### 🚀 Why this step?\nNow that you know your strengths and match scores, let’s build a personalized growth plan. These are AI-suggested courses, habits, and experiences that can level up your career — starting today.")
+            for rec in generate_growth_recs():
+                st.markdown(rec)
+            st.success("🎉 You’ve completed your Skippr profile!")
