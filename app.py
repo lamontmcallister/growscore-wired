@@ -207,6 +207,7 @@ def candidate_journey():
 
     if step == 0:
         st.markdown("### 📝 Step 1: Resume Upload + Contact Info")
+        st.markdown("""_We’ll use your resume to extract relevant skills and auto-fill your contact info. You control what gets shared._""")
         st.text_input("Full Name", key="cand_name")
         st.text_input("Email", key="cand_email")
         st.text_input("Target Job Title", key="cand_title")
@@ -221,6 +222,7 @@ def candidate_journey():
 
     elif step == 1:
         st.markdown("### 📋 Step 2: Select Your Skills")
+        st.markdown("""_These skills help recruiters understand your strengths. Adjust or add based on what best represents you._""")
         selected = st.multiselect("Choose your strongest skills:", skills_pool, default=st.session_state.get("resume_skills", []))
         st.session_state.selected_skills = selected
         st.button("Back", on_click=prev_step)
@@ -228,6 +230,7 @@ def candidate_journey():
 
     elif step == 2:
         st.markdown("### 🧠 Step 3: Behavioral Survey")
+        st.markdown("""_This survey helps highlight how you work. It’s part of your Quality of Hire score._""")
         behavior_questions = {
             "Meets deadlines consistently": None,
             "Collaborates well in teams": None,
@@ -248,6 +251,7 @@ def candidate_journey():
 
     elif step == 3:
         st.markdown("### 🤝 Step 4: References")
+        st.markdown("""_References build credibility. These are private and only used to strengthen your application._""")
         traits = ["Leadership", "Communication", "Reliability", "Strategic Thinking", "Teamwork", "Adaptability", "Problem Solving", "Empathy", "Initiative", "Collaboration"]
         for i in range(1, 3):
             with st.expander(f"Reference {i}"):
@@ -262,6 +266,7 @@ def candidate_journey():
 
     elif step == 4:
         st.markdown("### 📣 Step 5: Backchannel (Optional)")
+        st.markdown("""_Backchannel input gives you insights into teams or companies from people who’ve worked there._""")
         st.text_input("Name")
         st.text_input("Email")
         st.text_area("Message or Topic for Feedback")
@@ -270,6 +275,7 @@ def candidate_journey():
 
     elif step == 5:
         st.markdown("### 🎓 Step 6: Education")
+        st.markdown("""_Add education details to boost trust and completeness in your profile._""")
         st.text_input("Degree")
         st.text_input("Major")
         st.text_input("Institution")
@@ -279,6 +285,7 @@ def candidate_journey():
 
     elif step == 6:
         st.markdown("### 🏢 Step 7: HR Check")
+        st.markdown("""_You can request verification from past employers here. It’s a future feature — no emails will be sent now._""")
         st.text_input("Company")
         st.text_input("Manager")
         st.text_input("HR Email")
@@ -288,6 +295,7 @@ def candidate_journey():
 
     elif step == 7:
         st.markdown("### 📄 Step 8: Job Matching")
+        st.markdown("""_We’ll compare your resume to real job descriptions to highlight your fit and readiness._""")
         jd1 = st.text_area("Paste JD 1")
         jd2 = st.text_area("Paste JD 2")
         if jd1 and "resume_text" in st.session_state:
@@ -300,6 +308,7 @@ def candidate_journey():
 
     elif step == 8:
         st.markdown("### 📊 Step 9: Quality of Hire Score")
+        st.markdown("""_This is your full Quality of Hire score — built from your skills, behavior, references, and JD match._""")
         jd_scores = st.session_state.get("jd_scores", [75, 80])
         skill_count = len(st.session_state.get("selected_skills", []))
         behavior = st.session_state.get("behavior_score", 50)
