@@ -324,6 +324,24 @@ def candidate_journey():
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
 
+    elif step == 9:
+        st.markdown("### 🚀 Step 10: Growth Roadmap")
+        st.markdown("""_This personalized roadmap gives you ideas for 30/60/90-day growth, learning, and next steps._""")
+        prompt = f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\nCreate a career roadmap:\n• 30-day\n• 60-day\n• 90-day\n• 6-month\n• 1-year"
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            roadmap = response.choices[0].message.content.strip()
+        except:
+            roadmap = "• 30-Day: Onboard\n• 60-Day: Deliver small win\n• 90-Day: Lead initiative\n• 6-Month: Strategic growth\n• 1-Year: Prepare for promotion"
+
+        st.markdown(roadmap)
+        st.success("🎉 Complete!")
+
+        st.markdown("### 📩 Save Your Profile")
         if st.button("Save My Profile"):
             selected_skills = st.session_state.get("selected_skills", ["Python", "SQL"])
             jd_scores_list = st.session_state.get("jd_scores", [75, 85])
