@@ -3,18 +3,16 @@ import ast
 import json
 import pdfplumber
 import pandas as pd
-from openai import OpenAI
-from supabase import create_client, Client
+from supabase import Client
 from datetime import datetime
+from db.client import get_supabase_client
+from ai.client import get_openai_client
 
 # --- CONFIG ---
 st.set_page_config(page_title="Skippr", layout="wide")
 
-SUPABASE_URL = st.secrets["supabase"]["url"]
-SUPABASE_KEY = st.secrets["supabase"]["key"]
-OPENAI_KEY = st.secrets["openai"]["key"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-openai_client = OpenAI(api_key=OPENAI_KEY)
+supabase: Client = get_supabase_client()
+openai_client = get_openai_client()
 
 # --- CUSTOM STYLING ---
 def load_custom_css():
