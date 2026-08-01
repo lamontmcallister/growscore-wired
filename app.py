@@ -7,6 +7,7 @@ from supabase import Client
 from datetime import datetime
 from db.client import get_supabase_client
 from ai.client import get_openai_client
+from ai.resume import extract_skills_from_resume, extract_contact_info, match_resume_to_jds
 
 # --- CONFIG ---
 st.set_page_config(page_title="Skippr", layout="wide")
@@ -65,69 +66,6 @@ def get_user_role(user) -> str:
     metadata = getattr(user, "user_metadata", None) or {}
     role = metadata.get("role", "candidate")
     return role if role in ("candidate", "recruiter") else "candidate"
-
-
-def call_openai_json(prompt: str, temperature: float = 0.3):
-    """
-    Calls OpenAI's chat completions endpoint (openai>=1.0 client) and asks for
-    strict JSON back so we don't depend on ast.literal_eval parsing whatever
-    prose the model feels like returning.
-
-    Returns (data, error). On failure, `data` is None and `error` holds a
-    human-readable message — callers must surface this to the user rather
-    than silently substituting fabricated values.
-    """
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You respond only with valid JSON. No prose, no markdown fences."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=temperature,
-        )
-        raw = response.choices[0].message.content.strip()
-        raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        return json.loads(raw), None
-    except json.JSONDecodeError as e:
-        return None, f"AI returned unparseable output: {e}"
-    except Exception as e:
-        return None, f"AI request failed: {e}"
-
-
-def extract_skills_from_resume(text):
-    prompt = (
-        "Extract 5-10 professional skills from this resume. "
-        'Respond as JSON: {"skills": ["skill1", "skill2", ...]}\n\n'
-        f"Resume:\n{text}"
-    )
-    data, error = call_openai_json(prompt)
-    if error:
-        return [], error
-    return data.get("skills", []), None
-
-
-def extract_contact_info(text):
-    prompt = (
-        "From this resume, extract the full name, email, and job title. "
-        'Respond as JSON: {"name": "...", "email": "...", "title": "..."}\n\n'
-        f"Resume:\n{text}"
-    )
-    data, error = call_openai_json(prompt)
-    if error:
-        return {"name": "", "email": "", "title": ""}, error
-    return data, None
-
-
-def match_resume_to_jds(resume_text, jd_texts):
-    prompt = f"Given this resume:\n{resume_text}\n\nMatch semantically to the following job descriptions:\n"
-    for i, jd in enumerate(jd_texts):
-        prompt += f"\nJD {i+1}:\n{jd}\n"
-    prompt += '\nRespond as JSON: {"scores": [82, 76]} — one 0-100 match score per JD, in order.'
-    data, error = call_openai_json(prompt)
-    if error:
-        return [], error
-    return data.get("scores", []), None
 
 
 def calculate_qoh_score(skill_count, ref, behav, jd_scores):
@@ -235,7 +173,13 @@ def candidate_journey():
     elif step == 1:
         st.markdown("### 📋 Step 2: Select Your Skills")
         st.markdown("""_These skills help recruiters understand your strengths. Adjust or add based on what best represents you._""")
-        selected = st.multiselect("Choose your strongest skills:", skills_pool, default=st.session_state.get("resume_skills", []))
+        resume_skills = st.session_state.get("resume_skills", [])
+        # Build the options list from the fixed pool PLUS whatever the AI
+        # extracted from this resume, so multiselect's default never
+        # references a value that isn't in its own options (Streamlit
+        # raises StreamlitAPIException if that happens).
+        available_skills = list(dict.fromkeys(skills_pool + resume_skills))
+        selected = st.multiselect("Choose your strongest skills:", available_skills, default=resume_skills)
         st.session_state.selected_skills = selected
         st.button("Back", on_click=prev_step)
         st.button("Next", on_click=next_step)
