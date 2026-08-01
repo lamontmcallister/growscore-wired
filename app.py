@@ -7,7 +7,8 @@ from supabase import Client
 from datetime import datetime
 from db.client import get_supabase_client
 from ai.client import get_openai_client
-from ai.resume import extract_skills_from_resume, extract_contact_info, match_resume_to_jds
+from ai.resume import call_openai_json, extract_skills_from_resume, extract_contact_info, match_resume_to_jds
+from auth.roles import get_user_role
 
 # --- CONFIG ---
 st.set_page_config(page_title="Skippr", layout="wide")
@@ -51,22 +52,6 @@ skills_pool = [
     "Python", "SQL", "Leadership", "Data Analysis", "Machine Learning",
     "Communication", "Strategic Planning", "Excel", "Project Management"
 ]
-
-def get_user_role(user) -> str:
-    """
-    Server-side role check. Reads role from Supabase auth user_metadata rather
-    than trusting a client-side toggle. Defaults to 'candidate' if unset.
-
-    To grant recruiter access, set user_metadata.role = "recruiter" for that
-    user in Supabase (Dashboard > Authentication > Users > Edit, or via the
-    admin API). Do NOT gate recruiter access on anything the client controls.
-    """
-    if not user:
-        return "candidate"
-    metadata = getattr(user, "user_metadata", None) or {}
-    role = metadata.get("role", "candidate")
-    return role if role in ("candidate", "recruiter") else "candidate"
-
 
 def calculate_qoh_score(skill_count, ref, behav, jd_scores):
     if not jd_scores:
@@ -465,10 +450,15 @@ def login_ui():
                 st.error(f"Signup failed: {e}")
 
 # --- ROUTING ---
+# NOTE: manual portal switch for local testing. This bypasses the
+# server-side role check in auth/roles.py -- do not ship this to real
+# users without bringing back get_user_role() as the actual gate.
 if st.session_state.supabase_user:
-    user_role = get_user_role(st.session_state.supabase_user)
+    with st.sidebar:
+        st.markdown("---")
+        portal = st.radio("View As (testing only)", ["Candidate", "Recruiter"], key="portal_choice")
 
-    if user_role == "recruiter":
+    if portal == "Recruiter":
         recruiter_dashboard()
     else:
         if not st.session_state.get("profile_selected"):
