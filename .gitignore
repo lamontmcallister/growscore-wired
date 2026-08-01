@@ -3,3 +3,6 @@
 growscore-wired/.streamlit/secrets.toml
 .streamlit:secrets.toml.py
 .streamlit/secrets.toml
+__pycache__/
+*.pyc
+*.backup
