@@ -611,6 +611,38 @@ def recruiter_dashboard():
     st.dataframe(df, use_container_width=True)
 
     st.markdown("---")
+    st.subheader("✅ Candidate Decisions")
+    st.caption("Mark each candidate's status. These decisions are saved and will inform future scoring calibration.")
+
+    decision_options = ["No decision yet", "Strong Hire", "Maybe", "Pass"]
+    recruiter_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else "unknown"
+
+    for row in rows:
+        candidate_name = row.get("name", "Unknown")
+        current_decision = row.get("recruiter_decision") or "No decision yet"
+        with st.expander(f"{candidate_name} — {current_decision}"):
+            new_decision = st.selectbox(
+                "Decision",
+                decision_options,
+                index=decision_options.index(current_decision) if current_decision in decision_options else 0,
+                key=f"decision_{row.get('id')}",
+            )
+            if st.button("Save Decision", key=f"save_decision_{row.get('id')}"):
+                if new_decision == "No decision yet":
+                    st.warning("Select an actual decision before saving.")
+                else:
+                    try:
+                        supabase.table("profiles").update({
+                            "recruiter_decision": new_decision,
+                            "decision_made_by": recruiter_email,
+                            "decision_made_at": datetime.utcnow().isoformat(),
+                        }).eq("id", row.get("id")).execute()
+                        st.success(f"Saved: {candidate_name} → {new_decision}")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to save decision: {e}")
+
+    st.markdown("---")
     st.subheader("🔍 AI Recommendations")
     for _, row in df.iterrows():
         score = row["QoH Score"]
