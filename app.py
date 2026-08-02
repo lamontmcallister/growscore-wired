@@ -307,14 +307,22 @@ def candidate_journey():
         st.markdown("### 🤝 Step 4: References")
         st.markdown("""_References build credibility. These are private and only used to strengthen your application._""")
         traits = ["Leadership", "Communication", "Reliability", "Strategic Thinking", "Teamwork", "Adaptability", "Problem Solving", "Empathy", "Initiative", "Collaboration"]
+        references = []
         for i in range(1, 3):
             with st.expander(f"Reference {i}"):
-                st.text_input("Name", key=f"ref{i}_name")
-                st.text_input("Email", key=f"ref{i}_email")
-                st.selectbox("Trait to Highlight", traits, key=f"ref{i}_trait")
-                st.text_area("Optional Message", key=f"ref{i}_msg")
+                ref_name = st.text_input("Name", key=f"ref{i}_name")
+                ref_email = st.text_input("Email", key=f"ref{i}_email")
+                ref_trait = st.selectbox("Trait to Highlight", traits, key=f"ref{i}_trait")
+                ref_msg = st.text_area("Optional Message", key=f"ref{i}_msg")
+                if ref_name and ref_email:
+                    references.append({
+                        "name": ref_name, "email": ref_email,
+                        "trait": ref_trait, "message": ref_msg,
+                    })
                 if st.button(f"Send to Ref {i}"):
                     st.success(f"Request sent to {st.session_state.get(f'ref{i}_name')}")
+        # Real reference data, stored for scoring/saving -- not hardcoded mock data.
+        st.session_state.reference_data = references
         st.button("← Skip Back", on_click=prev_step)
         st.button("Skip →", on_click=next_step)
 
@@ -330,10 +338,15 @@ def candidate_journey():
     elif step == 5:
         st.markdown("### 🎓 Step 6: Education")
         st.markdown("""_Add education details to boost trust and completeness in your profile._""")
-        st.text_input("Degree")
-        st.text_input("Major")
-        st.text_input("Institution")
-        st.text_input("Graduation Year")
+        edu_degree = st.text_input("Degree", key="edu_degree")
+        edu_major = st.text_input("Major", key="edu_major")
+        edu_institution = st.text_input("Institution", key="edu_institution")
+        edu_year = st.text_input("Graduation Year", key="edu_year")
+        # Real education data, stored for saving -- not hardcoded mock data.
+        st.session_state.education_data = {
+            "degree": edu_degree, "major": edu_major,
+            "institution": edu_institution, "graduation_year": edu_year,
+        }
         st.button("← Skip Back", on_click=prev_step)
         st.button("Skip →", on_click=next_step)
 
@@ -391,7 +404,12 @@ def candidate_journey():
         jd_scores = st.session_state.get("jd_scores", [])
         skill_count = len(st.session_state.get("selected_skills", []))
         behavior = st.session_state.get("behavior_score", 50)
-        ref_score = 90
+        # Real reference score: based on how many references were actually
+        # provided (0, 1, or 2), not a hardcoded placeholder.
+        reference_count = len(st.session_state.get("reference_data", []))
+        ref_score = min(reference_count * 45, 100)
+        if reference_count == 0:
+            st.caption("ℹ️ No references added yet -- this affects your QoH score. Add references in Step 4 for a more complete score.")
         qoh, breakdown = calculate_qoh_score(skill_count, ref_score, behavior, jd_scores)
         if qoh is None:
             st.warning("⚠️ No JD match scores yet — go back to Step 8 and paste a job description first.")
@@ -473,8 +491,8 @@ def candidate_journey():
                     "resume_text": st.session_state.get("resume_text", ""),
                     "selected_skills": selected_skills,
                     "behavior_score": st.session_state.get("behavior_score"),
-                    "reference_data": {"mock": "data"},  # TODO: wire real reference data once Step 4 persists it
-                    "education": {"mock": "data"},        # TODO: wire real education data once Step 6 persists it
+                    "reference_data": st.session_state.get("reference_data", []),
+                    "education": st.session_state.get("education_data", {}),
                     "qoh_score": st.session_state.get("qoh_score"),
                     "jd_scores": jd_scores_list,
                     "growth_roadmap": roadmap,
