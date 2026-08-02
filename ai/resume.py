@@ -64,3 +64,33 @@ def match_resume_to_jds(resume_text, jd_texts):
     if error:
         return [], error
     return data.get("scores", []), None
+
+
+def match_resume_to_jd(resume_text, jd_text):
+    """
+    Compares a resume to a single job description and returns a detailed,
+    explainable, evidence-grounded match: an overall score, matched skills
+    each tied to a specific line or achievement from the resume (not just a
+    skill name), and missing skills each with a short note on why that gap
+    matters for this specific role. This is what powers both the Step 8 JD
+    Match display and the Step 10 roadmap.
+    """
+    prompt = (
+        "Compare this resume to the job description below.\n\n"
+        "For skills/qualifications the resume DOES demonstrate, list them as "
+        "matched_skills -- for each one, include a short 'evidence' quote or "
+        "close paraphrase of the specific line/achievement in the resume that "
+        "supports it (under 20 words, drawn directly from the resume text).\n\n"
+        "For skills/qualifications the resume does NOT clearly demonstrate, list "
+        "them as missing_skills -- for each one, include a short 'why_it_matters' "
+        "note (under 20 words) explaining why this role specifically needs it.\n\n"
+        "Keep each skill name short (2-4 words).\n\n"
+        'Respond as JSON: {"score": 0-100, '
+        '"matched_skills": [{"skill": "...", "evidence": "..."}], '
+        '"missing_skills": [{"skill": "...", "why_it_matters": "..."}]}\n\n'
+        f"Resume:\n{resume_text}\n\nJob Description:\n{jd_text}"
+    )
+    data, error = call_openai_json(prompt)
+    if error:
+        return None, error
+    return data, None

@@ -7,7 +7,8 @@ from supabase import Client
 from datetime import datetime
 from db.client import get_supabase_client
 from ai.client import get_openai_client
-from ai.resume import call_openai_json, extract_skills_from_resume, extract_contact_info, match_resume_to_jds
+from ai.resume import call_openai_json, extract_skills_from_resume, extract_contact_info, match_resume_to_jds, match_resume_to_jd
+from ai.learning_resources import coursera_search_link
 from auth.roles import get_user_role
 
 # --- CONFIG ---
@@ -106,6 +107,26 @@ def load_custom_css():
                 border: 1px solid #E4E6EA;
                 margin-bottom: 1rem;
             }
+            /* Sliders: brand blue instead of default red */
+            div[data-testid="stSlider"] div[role="slider"] {
+                background-color: #2D5BFF !important;
+                border-color: #2D5BFF !important;
+            }
+            div[data-testid="stSlider"] > div > div > div {
+                background: linear-gradient(90deg, #2D5BFF, #00C2A8) !important;
+            }
+            /* QoH score badge pills */
+            .qoh-badge {
+                display: inline-block;
+                padding: 0.25rem 0.7rem;
+                border-radius: 999px;
+                font-weight: 700;
+                font-size: 0.85rem;
+            }
+            .qoh-high { background-color: #DCFCE7; color: #15803D; }
+            .qoh-mid { background-color: #DBEAFE; color: #1D4ED8; }
+            .qoh-low { background-color: #FEF3C7; color: #B45309; }
+            .qoh-incomplete { background-color: #F1F2F5; color: #6B7280; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -328,19 +349,39 @@ def candidate_journey():
 
     elif step == 7:
         st.markdown("### 📄 Step 8: Job Matching")
-        st.markdown("""_We'll compare your resume to real job descriptions to highlight your fit and readiness._""")
-        jd1 = st.text_area("Paste JD 1")
-        jd2 = st.text_area("Paste JD 2")
-        if jd1 and "resume_text" in st.session_state:
-            with st.spinner("Matching against job descriptions..."):
-                scores, match_error = match_resume_to_jds(st.session_state.resume_text, [jd1, jd2])
+        st.markdown("""_Paste the job description you're targeting. We'll show exactly what matches and what's missing -- not just a score._""")
+        jd_target = st.text_area("Paste the job description you're targeting", value=st.session_state.get("jd_target_text", ""), height=200)
+        if st.button("Analyze Match") and jd_target and "resume_text" in st.session_state:
+            with st.spinner("Analyzing your fit against this role..."):
+                match_data, match_error = match_resume_to_jd(st.session_state.resume_text, jd_target)
             if match_error:
-                st.error(f"⚠️ Couldn't compute JD match scores right now ({match_error}). Try again in a moment.")
-                st.session_state.jd_scores = []
+                st.error(f"⚠️ Couldn't analyze this match right now ({match_error}). Try again in a moment.")
             else:
-                st.session_state.jd_scores = scores
-                for i, score in enumerate(scores):
-                    st.markdown(f"**JD {i+1} Match Score:** {score}%")
+                st.session_state.jd_target_text = jd_target
+                st.session_state.jd_match_data = match_data
+                st.session_state.jd_scores = [match_data.get("score", 0)]
+
+        match_data = st.session_state.get("jd_match_data")
+        if match_data:
+            st.metric("Match Score", f"{match_data.get('score', 0)}%")
+            col_match, col_gap = st.columns(2)
+            with col_match:
+                st.markdown("**✅ Matched skills**")
+                for item in match_data.get("matched_skills", []):
+                    skill = item.get("skill", "") if isinstance(item, dict) else item
+                    evidence = item.get("evidence", "") if isinstance(item, dict) else ""
+                    st.markdown(f"**{skill}**")
+                    if evidence:
+                        st.caption(f"From your resume: \"{evidence}\"")
+            with col_gap:
+                st.markdown("**🔍 Skills to develop**")
+                for item in match_data.get("missing_skills", []):
+                    skill = item.get("skill", "") if isinstance(item, dict) else item
+                    why = item.get("why_it_matters", "") if isinstance(item, dict) else ""
+                    st.markdown(f"**{skill}**")
+                    if why:
+                        st.caption(why)
+
         st.button("← Skip Back", on_click=prev_step)
         st.button("Skip →", on_click=next_step)
 
@@ -430,7 +471,36 @@ def candidate_journey():
 
 
 # --- RECRUITER DASHBOARD ---
+def qoh_badge_html(score):
+    """Renders a QoH score as a color-coded pill badge instead of a bare number."""
+    if score == "Incomplete":
+        return '<span class="qoh-badge qoh-incomplete">Incomplete</span>'
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        return '<span class="qoh-badge qoh-incomplete">—</span>'
+    if score >= 80:
+        css_class = "qoh-high"
+    elif score >= 60:
+        css_class = "qoh-mid"
+    else:
+        css_class = "qoh-low"
+    return f'<span class="qoh-badge {css_class}">{score}</span>'
+
+
 def recruiter_dashboard():
+    st.markdown("""
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.2rem;">
+            <div style="width:32px;height:32px;background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                        border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="color:#FFFFFF;font-weight:800;font-size:1rem;">S</span>
+            </div>
+            <span style="font-size:1.15rem;font-weight:800;letter-spacing:-0.02em;
+                         background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                         -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                         background-clip:text;">Skippr</span>
+        </div>
+    """, unsafe_allow_html=True)
     st.title("💼 Recruiter Dashboard")
 
     with st.sidebar.expander("🎚 Adjust Quality of Hire Weights", expanded=True):
