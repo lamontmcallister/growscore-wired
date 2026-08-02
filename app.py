@@ -408,12 +408,31 @@ def candidate_journey():
 
     elif step == 9:
         st.markdown("### 🚀 Step 10: Growth Roadmap")
-        st.markdown("""_This personalized roadmap gives you ideas for 30/60/90-day growth, learning, and next steps._""")
-        prompt = (
-            f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\n"
-            'Create a career roadmap. Respond as JSON: '
-            '{"30_day": "...", "60_day": "...", "90_day": "...", "6_month": "...", "1_year": "..."}'
-        )
+
+        match_data = st.session_state.get("jd_match_data")
+        missing_skills = match_data.get("missing_skills", []) if match_data else []
+
+        if missing_skills:
+            st.markdown("""_This roadmap is built around the specific gaps identified in Step 8 -- not generic advice._""")
+            gap_lines = "\n".join(
+                f"- {item.get('skill', '')}: {item.get('why_it_matters', '')}"
+                for item in missing_skills if isinstance(item, dict)
+            )
+            prompt = (
+                f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\n"
+                f"This candidate is targeting a specific role and has these skill gaps:\n{gap_lines}\n\n"
+                "Create a career roadmap specifically focused on closing THESE gaps, in priority order. "
+                "Each phase should reference which specific gap(s) it addresses.\n\n"
+                'Respond as JSON: {"30_day": "...", "60_day": "...", "90_day": "...", "6_month": "...", "1_year": "..."}'
+            )
+        else:
+            st.markdown("""_This roadmap gives general 30/60/90-day growth ideas. For a roadmap targeted at a specific role, go back to Step 8 and analyze a job description first._""")
+            prompt = (
+                f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\n"
+                'Create a career roadmap. Respond as JSON: '
+                '{"30_day": "...", "60_day": "...", "90_day": "...", "6_month": "...", "1_year": "..."}'
+            )
+
         roadmap_data, roadmap_error = call_openai_json(prompt, temperature=0.7)
         if roadmap_error:
             st.error(f"⚠️ Couldn't generate a roadmap right now ({roadmap_error}). You can still save your profile below.")
@@ -426,6 +445,18 @@ def candidate_journey():
             st.markdown(f"**6-Month:** {roadmap.get('6_month', '')}")
             st.markdown(f"**1-Year:** {roadmap.get('1_year', '')}")
             st.success("🎉 Complete!")
+
+        if missing_skills:
+            st.markdown("### 📚 Recommended Learning")
+            st.caption("Real search results on Coursera for each gap -- not AI-guessed course names.")
+            for item in missing_skills:
+                if not isinstance(item, dict):
+                    continue
+                skill = item.get("skill", "")
+                if not skill:
+                    continue
+                link = coursera_search_link(skill)
+                st.markdown(f"- **{skill}** — [Search Coursera courses]({link})")
 
         st.markdown("### 📩 Save Your Profile")
         if st.button("Save My Profile"):
