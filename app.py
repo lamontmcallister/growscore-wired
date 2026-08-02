@@ -20,12 +20,92 @@ openai_client = get_openai_client()
 def load_custom_css():
     st.markdown("""
         <style>
-            html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; padding: 0rem !important; }
-            h1, h2, h3 { font-weight: 600 !important; margin-bottom: 0.5rem; }
-            div.stButton > button { background-color: #ff6a00; color: white; border: none; border-radius: 6px; padding: 0.5rem 1.2rem; font-weight: 600; font-size: 1rem; margin-top: 0.5rem; }
-            .stSlider > div { padding-top: 0.5rem; }
-            section[data-testid="stSidebar"] { background-color: #f9f4ef; border-right: 1px solid #e1dfdb; }
-            .markdown-block { background-color: #f8f8f8; padding: 1rem 1.5rem; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 1rem; }
+            html, body, [class*="css"] {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            }
+            .stApp {
+                background: radial-gradient(ellipse 1200px 600px at 50% -10%, rgba(45,91,255,0.08), transparent),
+                            radial-gradient(ellipse 800px 500px at 90% 10%, rgba(0,194,168,0.06), transparent),
+                            #F7F8FA;
+            }
+            h1, h2, h3 {
+                font-weight: 700 !important;
+                color: #16181D !important;
+                letter-spacing: -0.02em;
+            }
+            p, label, .stMarkdown, .stCaption {
+                color: #3A3F47;
+            }
+            /* Buttons: pill-shaped, cool blue */
+            div.stButton > button {
+                background: linear-gradient(135deg, #2D5BFF, #00C2A8);
+                color: #FFFFFF;
+                border: none;
+                border-radius: 24px;
+                padding: 0.55rem 1.4rem;
+                font-weight: 600;
+                font-size: 0.95rem;
+                transition: filter 0.15s ease, transform 0.1s ease;
+            }
+            div.stButton > button:hover {
+                filter: brightness(1.08);
+                transform: translateY(-1px);
+                color: #FFFFFF;
+            }
+            div.stButton > button p {
+                color: #FFFFFF !important;
+                font-weight: 600 !important;
+            }
+            /* Sidebar: white panel, hairline border */
+            section[data-testid="stSidebar"] {
+                background-color: #FFFFFF;
+                border-right: 1px solid #E4E6EA;
+            }
+            /* Card-style sections, matching LinkedIn's white content cards */
+            div[data-testid="stHorizontalBlock"],
+            div[data-testid="stVerticalBlockBorderWrapper"] {
+                background-color: #FFFFFF;
+                border: 1px solid #E4E6EA;
+                border-radius: 12px;
+                padding: 1.25rem 1.5rem;
+                box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+                margin-bottom: 1rem;
+            }
+            /* Inputs */
+            input, textarea, select {
+                border-radius: 8px !important;
+                border: 1px solid #D7DAE0 !important;
+            }
+            input:focus, textarea:focus {
+                border-color: #2D5BFF !important;
+                box-shadow: 0 0 0 2px rgba(45, 91, 255, 0.15) !important;
+            }
+            /* Progress bar: gradient pill */
+            div[data-testid="stProgress"] > div {
+                border-radius: 999px;
+                background-color: #E4E6EA;
+            }
+            div[data-testid="stProgress"] > div > div {
+                background: linear-gradient(90deg, #2D5BFF, #00C2A8);
+                border-radius: 999px;
+            }
+            /* Data tables (recruiter dashboard) */
+            div[data-testid="stDataFrame"] {
+                border: 1px solid #E4E6EA;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            /* Alert boxes */
+            div[data-testid="stAlert"] {
+                border-radius: 8px;
+            }
+            .markdown-block {
+                background-color: #FFFFFF;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                border: 1px solid #E4E6EA;
+                margin-bottom: 1rem;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -123,6 +203,18 @@ def candidate_journey():
     def next_step(): st.session_state.step = step + 1
     def prev_step(): st.session_state.step = max(0, step - 1)
 
+    st.markdown("""
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.2rem;">
+            <div style="width:32px;height:32px;background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                        border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="color:#FFFFFF;font-weight:800;font-size:1rem;">S</span>
+            </div>
+            <span style="font-size:1.15rem;font-weight:800;letter-spacing:-0.02em;
+                         background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                         -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                         background-clip:text;">Skippr</span>
+        </div>
+    """, unsafe_allow_html=True)
     st.title("🚀 Candidate Journey")
     st.progress((step + 1) / 10)
 
@@ -153,7 +245,7 @@ def candidate_journey():
                 st.session_state.resume_contact = contact
 
             st.success("✅ Resume parsed.")
-        st.button("Next", on_click=next_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 1:
         st.markdown("### 📋 Step 2: Select Your Skills")
@@ -166,8 +258,8 @@ def candidate_journey():
         available_skills = list(dict.fromkeys(skills_pool + resume_skills))
         selected = st.multiselect("Choose your strongest skills:", available_skills, default=resume_skills)
         st.session_state.selected_skills = selected
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 2:
         st.markdown("### 🧠 Step 3: Behavioral Survey")
@@ -187,8 +279,8 @@ def candidate_journey():
             score_total += score_map[response]
         behavior_score = round((score_total / (len(behavior_questions) * 5)) * 100, 1)
         st.session_state.behavior_score = behavior_score
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 3:
         st.markdown("### 🤝 Step 4: References")
@@ -202,8 +294,8 @@ def candidate_journey():
                 st.text_area("Optional Message", key=f"ref{i}_msg")
                 if st.button(f"Send to Ref {i}"):
                     st.success(f"Request sent to {st.session_state.get(f'ref{i}_name')}")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 4:
         st.markdown("### 📣 Step 5: Backchannel (Optional)")
@@ -211,8 +303,8 @@ def candidate_journey():
         st.text_input("Name")
         st.text_input("Email")
         st.text_area("Message or Topic for Feedback")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 5:
         st.markdown("### 🎓 Step 6: Education")
@@ -221,8 +313,8 @@ def candidate_journey():
         st.text_input("Major")
         st.text_input("Institution")
         st.text_input("Graduation Year")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 6:
         st.markdown("### 🏢 Step 7: HR Check")
@@ -231,8 +323,8 @@ def candidate_journey():
         st.text_input("Manager")
         st.text_input("HR Email")
         st.checkbox("I authorize verification")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 7:
         st.markdown("### 📄 Step 8: Job Matching")
@@ -249,8 +341,8 @@ def candidate_journey():
                 st.session_state.jd_scores = scores
                 for i, score in enumerate(scores):
                     st.markdown(f"**JD {i+1} Match Score:** {score}%")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 8:
         st.markdown("### 📊 Step 9: Quality of Hire Score")
@@ -270,8 +362,8 @@ def candidate_journey():
             st.session_state.profiles[st.session_state.active_profile]["progress"]["Quality of Hire"] = True
             for k, v in breakdown.items():
                 st.write(f"**{k}**: {v}/100")
-        st.button("Back", on_click=prev_step)
-        st.button("Next", on_click=next_step)
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
 
     elif step == 9:
         st.markdown("### 🚀 Step 10: Growth Roadmap")
@@ -417,17 +509,51 @@ def recruiter_dashboard():
 
 # --- LOGIN UI ---
 def login_ui():
-    st.markdown("##")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("A41A3441-9CCF-41D8-8932-25DB5A9176ED.PNG", width=350)
-        st.markdown("### From Rejection to Revolution")
-        st.caption("💡 I didn't get the job. I built the platform that fixes the problem.")
+        st.markdown("""
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;
+                        margin:2.5rem 0 2rem 0;">
+                <div style="width:120px;height:120px;background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                            border-radius:28px;display:flex;align-items:center;justify-content:center;
+                            box-shadow:0 12px 36px rgba(45,91,255,0.4);margin-bottom:1.5rem;">
+                    <span style="color:#FFFFFF;font-weight:800;font-size:3.8rem;">S</span>
+                </div>
+                <span style="font-size:3rem;font-weight:800;letter-spacing:-0.03em;
+                             background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                             -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                             background-clip:text;margin-bottom:1.2rem;">Skippr</span>
+                <h1 style="font-size:2.3rem;font-weight:800;letter-spacing:-0.03em;line-height:1.15;
+                           margin:0 0 1.2rem 0;color:#16181D;">
+                    From Rejection to <span style="color:#2D5BFF;">Revolution</span>
+                </h1>
+                <p style="font-size:1.05rem;color:#6B7280;max-width:420px;margin:0;">
+                    💡 I didn't get the job. I built the platform that fixes the problem.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
 
     with st.sidebar:
-        st.header("🔐 Log In or Create Account")
+        st.markdown("""
+            <div style="display:flex;align-items:center;gap:0.6rem;margin:0.2rem 0 1.5rem 0;">
+                <div style="width:36px;height:36px;background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                            border-radius:9px;display:flex;align-items:center;justify-content:center;
+                            box-shadow:0 3px 10px rgba(45,91,255,0.3);flex-shrink:0;">
+                    <span style="color:#FFFFFF;font-weight:800;font-size:1.15rem;">S</span>
+                </div>
+                <span style="font-size:1.35rem;font-weight:800;letter-spacing:-0.02em;
+                             background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                             -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                             background-clip:text;">Skippr</span>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("""
+            <p style="font-size:1.05rem;font-weight:700;color:#16181D;margin-bottom:1rem;">
+                Log in or create your account
+            </p>
+        """, unsafe_allow_html=True)
         mode = st.radio("Choose Mode", ["Login", "Sign Up"])
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
