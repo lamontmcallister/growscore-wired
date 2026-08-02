@@ -373,6 +373,21 @@ def candidate_journey():
                 st.session_state.jd_target_text = jd_target
                 st.session_state.jd_match_data = match_data
                 st.session_state.jd_scores = [match_data.get("score", 0)]
+                # Save every analysis to job_matches so candidates build real
+                # history across every role they check themselves against,
+                # instead of only ever seeing their most recent result.
+                user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else None
+                if user_email:
+                    try:
+                        supabase.table("job_matches").insert({
+                            "user_email": user_email,
+                            "jd_text": jd_target,
+                            "score": match_data.get("score", 0),
+                            "matched_skills": match_data.get("matched_skills", []),
+                            "missing_skills": match_data.get("missing_skills", []),
+                        }).execute()
+                    except Exception as e:
+                        st.caption(f"⚠️ Match shown above, but couldn't save to your history: {e}")
 
         match_data = st.session_state.get("jd_match_data")
         if match_data:
