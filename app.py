@@ -10,6 +10,7 @@ from ai.client import get_openai_client
 from ai.resume import call_openai_json, extract_skills_from_resume, extract_contact_info, match_resume_to_jds, match_resume_to_jd
 from ai.learning_resources import coursera_search_link
 from auth.roles import get_user_role
+from candidates.backchannel import render_request_backchannel_ui, render_reference_response_page
 
 # --- CONFIG ---
 st.set_page_config(page_title="Skippr", layout="wide")
@@ -327,11 +328,13 @@ def candidate_journey():
         st.button("Skip →", on_click=next_step)
 
     elif step == 4:
-        st.markdown("### 📣 Step 5: Backchannel (Optional)")
-        st.markdown("""_Backchannel input gives you insights into teams or companies from people who've worked there._""")
-        st.text_input("Name")
-        st.text_input("Email")
-        st.text_area("Message or Topic for Feedback")
+        st.markdown("### 📣 Step 5: Backchannel")
+        st.markdown("""_This is what makes Skippr different: a real person answers honest fit questions about you -- not just an AI-parsed resume._""")
+        user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else None
+        if user_email:
+            render_request_backchannel_ui(supabase, user_email)
+        else:
+            st.info("Log in to request a backchannel reference.")
         st.button("← Skip Back", on_click=prev_step)
         st.button("Skip →", on_click=next_step)
 
@@ -742,6 +745,14 @@ def login_ui():
                 st.error(f"Signup failed: {e}")
 
 # --- ROUTING ---
+# Public, unauthenticated route: a reference clicking their tokenized link
+# lands here directly, with no login required. This must be checked before
+# any auth-gated routing below.
+query_params = st.query_params
+if "ref" in query_params:
+    render_reference_response_page(query_params["ref"])
+    st.stop()
+
 # NOTE: manual portal switch for local testing. This bypasses the
 # server-side role check in auth/roles.py -- do not ship this to real
 # users without bringing back get_user_role() as the actual gate.
