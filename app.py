@@ -306,35 +306,31 @@ def candidate_journey():
 
     elif step == 3:
         st.markdown("### 🤝 Step 4: References")
-        st.markdown("""_References build credibility. These are private and only used to strengthen your application._""")
-        traits = ["Leadership", "Communication", "Reliability", "Strategic Thinking", "Teamwork", "Adaptability", "Problem Solving", "Empathy", "Initiative", "Collaboration"]
-        references = []
-        for i in range(1, 3):
-            with st.expander(f"Reference {i}"):
-                ref_name = st.text_input("Name", key=f"ref{i}_name")
-                ref_email = st.text_input("Email", key=f"ref{i}_email")
-                ref_trait = st.selectbox("Trait to Highlight", traits, key=f"ref{i}_trait")
-                ref_msg = st.text_area("Optional Message", key=f"ref{i}_msg")
-                if ref_name and ref_email:
-                    references.append({
-                        "name": ref_name, "email": ref_email,
-                        "trait": ref_trait, "message": ref_msg,
-                    })
-                if st.button(f"Send to Ref {i}"):
-                    st.success(f"Request sent to {st.session_state.get(f'ref{i}_name')}")
-        # Real reference data, stored for scoring/saving -- not hardcoded mock data.
-        st.session_state.reference_data = references
-        st.button("← Skip Back", on_click=prev_step)
-        st.button("Skip →", on_click=next_step)
-
-    elif step == 4:
-        st.markdown("### 📣 Step 5: Backchannel")
-        st.markdown("""_This is what makes Skippr different: a real person answers honest fit questions about you -- not just an AI-parsed resume._""")
+        st.markdown("""_This is what makes Skippr different: real people answer honest questions about working with you -- not a self-reported name and email._""")
         user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else None
         if user_email:
             render_request_backchannel_ui(supabase, user_email)
         else:
-            st.info("Log in to request a backchannel reference.")
+            st.info("Log in to request a reference.")
+        st.button("← Skip Back", on_click=prev_step)
+        st.button("Skip →", on_click=next_step)
+
+    elif step == 4:
+        st.markdown("### 📣 Step 5: Reference Summary")
+        st.markdown("""_A quick recap of the references you've requested so far. You can request more anytime from Step 4._""")
+        user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else None
+        if user_email:
+            try:
+                summary_result = supabase.table("backchannel_references").select("*").eq("candidate_email", user_email).execute()
+                summary_rows = summary_result.data or []
+                responded_count = sum(1 for r in summary_rows if r.get("responded"))
+                st.metric("Verified References", f"{responded_count} / {len(summary_rows)} requested")
+                if responded_count == 0:
+                    st.caption("ℹ️ No verified references yet -- this affects your QoH score. Go back to Step 4 to request one.")
+            except Exception as e:
+                st.caption(f"Couldn't load reference summary: {e}")
+        else:
+            st.info("Log in to see your reference summary.")
         st.button("← Skip Back", on_click=prev_step)
         st.button("Skip →", on_click=next_step)
 
@@ -422,12 +418,20 @@ def candidate_journey():
         jd_scores = st.session_state.get("jd_scores", [])
         skill_count = len(st.session_state.get("selected_skills", []))
         behavior = st.session_state.get("behavior_score", 50)
-        # Real reference score: based on how many references were actually
-        # provided (0, 1, or 2), not a hardcoded placeholder.
-        reference_count = len(st.session_state.get("reference_data", []))
+        # Real reference score: based on how many references have actually
+        # RESPONDED via the backchannel system (verified by a real person),
+        # not how many names/emails the candidate typed in.
+        qoh_user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else None
+        reference_count = 0
+        if qoh_user_email:
+            try:
+                ref_result = supabase.table("backchannel_references").select("responded").eq("candidate_email", qoh_user_email).eq("responded", True).execute()
+                reference_count = len(ref_result.data or [])
+            except Exception as e:
+                st.caption(f"Couldn't load verified reference count: {e}")
         ref_score = min(reference_count * 45, 100)
         if reference_count == 0:
-            st.caption("ℹ️ No references added yet -- this affects your QoH score. Add references in Step 4 for a more complete score.")
+            st.caption("ℹ️ No verified references yet -- this affects your QoH score. Request one in Step 4.")
         qoh, breakdown = calculate_qoh_score(skill_count, ref_score, behavior, jd_scores)
         if qoh is None:
             st.warning("⚠️ No JD match scores yet — go back to Step 8 and paste a job description first.")
@@ -502,6 +506,20 @@ def candidate_journey():
             if not user_email:
                 st.error("❌ You must be logged in to save a profile.")
             else:
+                # Pull real, verified reference data at save time -- only
+                # references that actually responded, not self-entered
+                # names. This replaces the old session-state reference_data,
+                # which no longer gets set now that Step 4 uses the real
+                # backchannel system instead of a self-reported form.
+                verified_references = []
+                try:
+                    ref_save_result = supabase.table("backchannel_references").select(
+                        "reference_name, relationship, would_recommend, strengths, work_style_notes, fit_notes"
+                    ).eq("candidate_email", user_email).eq("responded", True).execute()
+                    verified_references = ref_save_result.data or []
+                except Exception as e:
+                    st.caption(f"⚠️ Couldn't load verified references for saving: {e}")
+
                 profile_data = {
                     "user_email": user_email,
                     "name": st.session_state.get("active_profile"),
@@ -509,7 +527,7 @@ def candidate_journey():
                     "resume_text": st.session_state.get("resume_text", ""),
                     "selected_skills": selected_skills,
                     "behavior_score": st.session_state.get("behavior_score"),
-                    "reference_data": st.session_state.get("reference_data", []),
+                    "reference_data": verified_references,
                     "education": st.session_state.get("education_data", {}),
                     "qoh_score": st.session_state.get("qoh_score"),
                     "jd_scores": jd_scores_list,
