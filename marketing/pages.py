@@ -27,7 +27,15 @@ def _inject_marketing_css():
                 font-size: 0.95rem; font-weight: 500;
             }
             .mkt-links a:hover { color: #FF8A3D; }
-            .mkt-h1 { color: #FFFFFF; font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+            .mkt-h1 { color: #FFFFFF !important; font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+            /* The main app's global CSS forces h1/h2/h3 to a dark near-black
+            color with !important -- that wins over any non-!important rule
+            here, since both target the same <h1> tag. Every heading-level
+            element on these dark marketing pages needs !important too, or
+            text washes out invisibly against the dark background. */
+            .mkt-section-title { color: #FFFFFF !important; }
+            .mkt-card-title { color: #FFFFFF !important; }
+            .mkt-logo { color: #FFFFFF !important; }
             .mkt-eyebrow { color: #FF8A3D; font-size: 1.15rem; line-height: 1.6; font-weight: 500; }
             .mkt-body { color: rgba(255,255,255,0.65); font-size: 1.05rem; line-height: 1.7; }
             .mkt-section-title { color: #FFFFFF; font-size: 2rem; font-weight: 800; margin-bottom: 2rem; }
