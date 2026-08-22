@@ -11,6 +11,7 @@ from ai.resume import call_openai_json, extract_skills_from_resume, extract_cont
 from ai.learning_resources import coursera_search_link
 from auth.roles import get_user_role
 from candidates.backchannel import render_request_backchannel_ui, render_reference_response_page
+from marketing.pages import render_marketing_page
 
 # --- CONFIG ---
 st.set_page_config(page_title="Skippr", layout="wide")
@@ -717,19 +718,34 @@ def login_ui():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
-            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;
-                        margin:0.5rem 0 2rem 0;">
-                <span style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;
-                             background:linear-gradient(135deg,#2D5BFF,#00C2A8);
-                             -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                             background-clip:text;margin-bottom:0.8rem;">SKIPPR</span>
-                <h1 style="font-size:2.3rem;font-weight:800;letter-spacing:-0.03em;line-height:1.15;
-                           margin:0 0 1.2rem 0;color:#16181D;">
-                    From Rejection to <span style="color:#2D5BFF;">Revolution</span>
-                </h1>
-                <p style="font-size:1.05rem;color:#6B7280;max-width:420px;margin:0;">
-                    💡 I didn't get the job. I built the platform that fixes the problem.
-                </p>
+            <div style="background:linear-gradient(180deg, rgba(45,91,255,0.05), rgba(0,194,168,0.03));
+                        border-radius:20px;padding:2.5rem 2rem;margin:0.5rem 0 2rem 0;">
+                <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+                    <h1 style="font-size:2.3rem;font-weight:800;letter-spacing:-0.03em;line-height:1.15;
+                               margin:0 0 1rem 0;color:#16181D;">
+                        From Rejection to <span style="color:#2D5BFF;">Revolution</span>
+                    </h1>
+                    <p style="font-size:1.05rem;color:#6B7280;max-width:420px;margin:0 0 2rem 0;">
+                        💡 I didn't get the job. I built the platform that fixes the problem.
+                    </p>
+                    <div style="display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;width:100%;">
+                        <div style="flex:1;min-width:140px;text-align:center;">
+                            <div style="font-size:1.8rem;margin-bottom:0.4rem;">🤝</div>
+                            <div style="font-weight:700;color:#16181D;font-size:0.95rem;">Verified References</div>
+                            <div style="color:#6B7280;font-size:0.85rem;">Real people, not self-reported claims</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;text-align:center;">
+                            <div style="font-size:1.8rem;margin-bottom:0.4rem;">🎯</div>
+                            <div style="font-weight:700;color:#16181D;font-size:0.95rem;">Evidence-Based Matching</div>
+                            <div style="color:#6B7280;font-size:0.85rem;">Scores explained, not a black box</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;text-align:center;">
+                            <div style="font-size:1.8rem;margin-bottom:0.4rem;">🚀</div>
+                            <div style="font-weight:700;color:#16181D;font-size:0.95rem;">Real Career Roadmap</div>
+                            <div style="color:#6B7280;font-size:0.85rem;">Targeted at your actual gaps</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -782,6 +798,11 @@ def login_ui():
 query_params = st.query_params
 if "ref" in query_params:
     render_reference_response_page(query_params["ref"])
+    st.stop()
+
+# Public marketing site: /?mkt=home, ?mkt=candidates, ?mkt=recruiters, ?mkt=about
+if "mkt" in query_params:
+    render_marketing_page(query_params["mkt"])
     st.stop()
 
 # NOTE: manual portal switch for local testing. This bypasses the
