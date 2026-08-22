@@ -26,7 +26,7 @@ def _inject_marketing_css():
                 color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 2rem;
                 font-size: 0.95rem; font-weight: 500;
             }
-            .mkt-links a:hover { color: #FF8A3D; }
+            .mkt-links a:hover { color: #2D5BFF; }
             .mkt-h1 { color: #FFFFFF !important; font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
             /* The main app's global CSS forces h1/h2/h3 to a dark near-black
             color with !important -- that wins over any non-!important rule
@@ -36,16 +36,16 @@ def _inject_marketing_css():
             .mkt-section-title { color: #FFFFFF !important; }
             .mkt-card-title { color: #FFFFFF !important; }
             .mkt-logo { color: #FFFFFF !important; }
-            .mkt-eyebrow { color: #FF8A3D; font-size: 1.15rem; line-height: 1.6; font-weight: 500; }
+            .mkt-eyebrow { color: #4C7FFF; font-size: 1.15rem; line-height: 1.6; font-weight: 500; }
             .mkt-body { color: rgba(255,255,255,0.65); font-size: 1.05rem; line-height: 1.7; }
             .mkt-section-title { color: #FFFFFF; font-size: 2rem; font-weight: 800; margin-bottom: 2rem; }
             .mkt-card-title { color: #FFFFFF; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
             .mkt-cta {
-                display: inline-block; background: #FF8A3D; color: #0B0B0F !important;
+                display: inline-block; background: linear-gradient(135deg,#2D5BFF,#00C2A8); color: #FFFFFF !important;
                 padding: 0.8rem 1.8rem; border-radius: 8px; font-weight: 700;
                 text-decoration: none; margin-top: 1.5rem;
             }
-            .mkt-cta:hover { background: #FF9D5C; }
+            .mkt-cta:hover { filter: brightness(1.1); }
             .mkt-footer {
                 border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4rem;
                 padding-top: 2rem; color: rgba(255,255,255,0.45); font-size: 0.9rem;
@@ -74,7 +74,14 @@ def _render_nav(active: str):
 
     st.markdown(f"""
         <div class="mkt-nav">
-            <div class="mkt-logo">Skippr</div>
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+                <div style="width:52px;height:52px;background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                            border-radius:13px;display:flex;align-items:center;justify-content:center;
+                            box-shadow:0 5px 18px rgba(45,91,255,0.45);flex-shrink:0;">
+                    <span style="color:#FFFFFF;font-weight:800;font-size:1.7rem;">S</span>
+                </div>
+                <span class="mkt-logo">Skippr</span>
+            </div>
             <div class="mkt-links">
                 {link("Skippr Home", "home", "home")}
                 {link("Candidate Page", "candidates", "candidates")}
