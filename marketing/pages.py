@@ -107,7 +107,7 @@ def render_home():
                 decision-makers -- no guesswork, just results.
             </p>
             <h1 class="mkt-h1">Empowering Talent.<br>Elevating Potential.</h1>
-            <a class="mkt-cta" href="?" target="_self">Start Your Journey</a>
+            <a class="mkt-cta" href="?mkt=login" target="_self">Start Your Journey</a>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown(f"""
@@ -185,7 +185,7 @@ def render_candidates():
             hiring, so your credibility does the work of getting you noticed.</p>
         """, unsafe_allow_html=True)
 
-    st.markdown('<a class="mkt-cta" href="?" target="_self">Build Your Profile</a>', unsafe_allow_html=True)
+    st.markdown('<a class="mkt-cta" href="?mkt=login" target="_self">Build Your Profile</a>', unsafe_allow_html=True)
     _render_footer()
 
 
@@ -232,7 +232,7 @@ def render_recruiters():
             toward what "great" actually looks like on your team.</p>
         """, unsafe_allow_html=True)
 
-    st.markdown('<a class="mkt-cta" href="?" target="_self">See Your Candidates</a>', unsafe_allow_html=True)
+    st.markdown('<a class="mkt-cta" href="?mkt=login" target="_self">See Your Candidates</a>', unsafe_allow_html=True)
     _render_footer()
 
 
@@ -267,7 +267,7 @@ def render_about():
         real evidence, real people, on both sides of the hire.</p>
     """, unsafe_allow_html=True)
 
-    st.markdown('<a class="mkt-cta" href="?" target="_self">Start Your Journey</a>', unsafe_allow_html=True)
+    st.markdown('<a class="mkt-cta" href="?mkt=login" target="_self">Start Your Journey</a>', unsafe_allow_html=True)
     _render_footer()
 
 

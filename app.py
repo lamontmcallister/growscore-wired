@@ -801,8 +801,19 @@ if "ref" in query_params:
     st.stop()
 
 # Public marketing site: /?mkt=home, ?mkt=candidates, ?mkt=recruiters, ?mkt=about
-if "mkt" in query_params:
+# ?mkt=login is a special case: it's the CTA target from marketing pages,
+# and just falls through to the normal login/app routing below rather than
+# rendering a marketing page.
+if "mkt" in query_params and query_params["mkt"] != "login":
     render_marketing_page(query_params["mkt"])
+    st.stop()
+
+# Default landing: a logged-out visitor hitting the bare root URL (no query
+# params) sees the marketing Home page first, not the login form directly.
+# Logged-in users skip straight past this into the real app -- they
+# shouldn't be shown marketing content every time they return.
+if not st.session_state.supabase_user and not query_params:
+    render_marketing_page("home")
     st.stop()
 
 # NOTE: manual portal switch for local testing. This bypasses the
