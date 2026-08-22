@@ -696,20 +696,33 @@ def recruiter_dashboard():
 
 # --- LOGIN UI ---
 def login_ui():
+    st.markdown("""
+        <div style="width:100%;height:280px;border-radius:20px;overflow:hidden;
+                    position:relative;margin-bottom:2rem;">
+            <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=2070&auto=format&fit=crop"
+                 style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">
+            <div style="position:absolute;top:0;left:0;width:100%;height:100%;
+                        background:linear-gradient(135deg, rgba(45,91,255,0.75), rgba(0,194,168,0.55));">
+            </div>
+            <div style="position:relative;height:100%;display:flex;align-items:center;
+                        justify-content:center;text-align:center;padding:1rem;">
+                <span style="color:#FFFFFF;font-size:1.4rem;font-weight:700;
+                             text-shadow:0 2px 12px rgba(0,0,0,0.25);max-width:600px;">
+                    Real people. Verified references. Hired with confidence.
+                </span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
             <div style="display:flex;flex-direction:column;align-items:center;text-align:center;
-                        margin:2.5rem 0 2rem 0;">
-                <div style="width:120px;height:120px;background:linear-gradient(135deg,#2D5BFF,#00C2A8);
-                            border-radius:28px;display:flex;align-items:center;justify-content:center;
-                            box-shadow:0 12px 36px rgba(45,91,255,0.4);margin-bottom:1.5rem;">
-                    <span style="color:#FFFFFF;font-weight:800;font-size:3.8rem;">S</span>
-                </div>
-                <span style="font-size:3rem;font-weight:800;letter-spacing:-0.03em;
+                        margin:0.5rem 0 2rem 0;">
+                <span style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;
                              background:linear-gradient(135deg,#2D5BFF,#00C2A8);
                              -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                             background-clip:text;margin-bottom:1.2rem;">Skippr</span>
+                             background-clip:text;margin-bottom:0.8rem;">SKIPPR</span>
                 <h1 style="font-size:2.3rem;font-weight:800;letter-spacing:-0.03em;line-height:1.15;
                            margin:0 0 1.2rem 0;color:#16181D;">
                     From Rejection to <span style="color:#2D5BFF;">Revolution</span>
