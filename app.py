@@ -210,6 +210,13 @@ def profile_management():
         profile_data = next((p for p in profiles.data if p["name"] == selected), {})
         # Capture the real database id here too, for the same reason as above.
         st.session_state.active_profile_id = profile_data.get("id")
+        # Load the saved resume and active JD back into session state, so
+        # Steps 1 and 8 pre-fill with what's already saved on this profile
+        # instead of forcing the candidate to re-upload/re-paste every time.
+        if profile_data.get("resume_text"):
+            st.session_state.resume_text = profile_data["resume_text"]
+        if profile_data.get("active_jd_text"):
+            st.session_state._loaded_active_jd_text = profile_data["active_jd_text"]
         st.write(f"**Job Title**: {profile_data.get('job_title', 'N/A')}")
         st.write(f"**QoH Score**: {profile_data.get('qoh_score', 'N/A')}")
         if st.button(f"Edit Profile: {selected}"):
@@ -253,10 +260,15 @@ def candidate_journey():
         st.text_input("Full Name", key="cand_name")
         st.text_input("Email", key="cand_email")
         st.text_input("Target Job Title", key="cand_title")
+
+        if st.session_state.get("resume_text") and not st.session_state.get("_resume_just_uploaded"):
+            st.info("📄 A resume is already saved on this profile. Upload a new one below to replace it.")
+
         uploaded = st.file_uploader("Upload Resume (PDF/TXT)", type=["pdf", "txt"])
         if uploaded:
             text = uploaded.read().decode("utf-8") if uploaded.type == "text/plain" else "\n".join([p.extract_text() for p in pdfplumber.open(uploaded).pages if p.extract_text()])
             st.session_state.resume_text = text
+            st.session_state._resume_just_uploaded = True
 
             with st.spinner("Extracting skills..."):
                 skills, skills_error = extract_skills_from_resume(text)
@@ -273,7 +285,22 @@ def candidate_journey():
             else:
                 st.session_state.resume_contact = contact
 
-            st.success("✅ Resume parsed.")
+            # Auto-save immediately -- if the candidate never reaches the
+            # final "Save My Profile" step, the resume they just uploaded
+            # isn't lost. This overwrites any previously saved resume on
+            # this profile, matching "persists unless updated/deleted."
+            active_profile_id = st.session_state.get("active_profile_id")
+            if active_profile_id:
+                try:
+                    save_result = supabase.table("profiles").update({"resume_text": text}).eq("id", active_profile_id).execute()
+                    if save_result.data:
+                        st.success("✅ Resume parsed and saved to your profile.")
+                    else:
+                        st.warning("Resume parsed, but the save didn't affect any row -- try reselecting your profile from the home screen.")
+                except Exception as e:
+                    st.warning(f"Resume parsed, but couldn't auto-save yet: {e}")
+            else:
+                st.success("✅ Resume parsed.")
         st.button("Skip →", on_click=next_step)
 
     elif step == 1:
@@ -372,7 +399,8 @@ def candidate_journey():
     elif step == 7:
         st.markdown("### 📄 Step 8: Job Matching")
         st.markdown("""_Paste the job description you're targeting. We'll show exactly what matches and what's missing -- not just a score._""")
-        jd_target = st.text_area("Paste the job description you're targeting", value=st.session_state.get("jd_target_text", ""), height=200)
+        default_jd = st.session_state.get("jd_target_text") or st.session_state.get("_loaded_active_jd_text", "")
+        jd_target = st.text_area("Paste the job description you're targeting", value=default_jd, height=200)
         if st.button("Analyze Match") and jd_target and "resume_text" in st.session_state:
             with st.spinner("Analyzing your fit against this role..."):
                 match_data, match_error = match_resume_to_jd(st.session_state.resume_text, jd_target)
@@ -397,6 +425,16 @@ def candidate_journey():
                         }).execute()
                     except Exception as e:
                         st.caption(f"⚠️ Match shown above, but couldn't save to your history: {e}")
+                # Also save as this profile's CURRENT active JD -- separate
+                # from the job_matches history log above. Persists unless
+                # the candidate pastes a new one (which overwrites it) or
+                # deletes the profile.
+                active_profile_id = st.session_state.get("active_profile_id")
+                if active_profile_id:
+                    try:
+                        supabase.table("profiles").update({"active_jd_text": jd_target}).eq("id", active_profile_id).execute()
+                    except Exception as e:
+                        st.caption(f"⚠️ Match shown above, but couldn't save as your active JD: {e}")
 
         match_data = st.session_state.get("jd_match_data")
         if match_data:
@@ -550,18 +588,24 @@ def candidate_journey():
                     "growth_roadmap": roadmap,
                     "timestamp": datetime.utcnow().isoformat()
                 }
-                try:
-                    result = supabase.table("profiles").update(profile_data) \
-                        .eq("user_email", user_email) \
-                        .eq("name", profile_data["name"]).execute()
-                    if result.data:
-                        st.success("✅ Profile updated successfully!")
-                    else:
-                        supabase.table("profiles").insert(profile_data).execute()
-                        st.success("✅ Profile created successfully!")
-                    st.session_state.profile_saved = True
-                except Exception as e:
-                    st.error(f"❌ Error saving profile: {e}")
+                active_profile_id = st.session_state.get("active_profile_id")
+                if not active_profile_id:
+                    st.error("❌ Couldn't find this profile's database record. Try reselecting your profile from the home screen before saving.")
+                else:
+                    try:
+                        # Match by the real database id, not by name -- name
+                        # matching is fragile (whitespace, exact-string) and
+                        # was the root cause of duplicate profile rows being
+                        # silently created when an update matched nothing.
+                        result = supabase.table("profiles").update(profile_data) \
+                            .eq("id", active_profile_id).execute()
+                        if result.data:
+                            st.success("✅ Profile updated successfully!")
+                        else:
+                            st.error("⚠️ Save didn't affect any row. This profile may have been deleted -- try reselecting it from the home screen.")
+                        st.session_state.profile_saved = True
+                    except Exception as e:
+                        st.error(f"❌ Error saving profile: {e}")
 
         if st.session_state.get("profile_saved"):
             if st.button("🏠 Home"):
