@@ -192,9 +192,12 @@ def profile_management():
                     "timestamp": datetime.utcnow().isoformat()
                 }
                 try:
-                    supabase.table("profiles").insert(profile_data).execute()
+                    insert_result = supabase.table("profiles").insert(profile_data).execute()
                     st.success(f"✅ New profile '{new_name}' created successfully!")
                     st.session_state.active_profile = new_name
+                    # Capture the real database id -- needed to scope backchannel
+                    # references to THIS profile, not every profile under this login.
+                    st.session_state.active_profile_id = insert_result.data[0]["id"] if insert_result.data else None
                     st.session_state.step = 0
                     st.session_state.profile_selected = True
                     st.rerun()
@@ -205,6 +208,8 @@ def profile_management():
         st.session_state.step = 0
         st.session_state.profile_selected = True
         profile_data = next((p for p in profiles.data if p["name"] == selected), {})
+        # Capture the real database id here too, for the same reason as above.
+        st.session_state.active_profile_id = profile_data.get("id")
         st.write(f"**Job Title**: {profile_data.get('job_title', 'N/A')}")
         st.write(f"**QoH Score**: {profile_data.get('qoh_score', 'N/A')}")
         if st.button(f"Edit Profile: {selected}"):
@@ -215,6 +220,7 @@ def profile_management():
                 st.success(f"Deleted profile: {selected}")
                 st.session_state.profile_selected = False
                 st.session_state.active_profile = None
+                st.session_state.active_profile_id = None
                 st.rerun()
             except Exception as e:
                 st.error(f"Failed to delete profile: {e}")
@@ -310,7 +316,7 @@ def candidate_journey():
         st.markdown("""_This is what makes Skippr different: real people answer honest questions about working with you -- not a self-reported name and email._""")
         user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else None
         if user_email:
-            render_request_backchannel_ui(supabase, user_email)
+            render_request_backchannel_ui(supabase, user_email, st.session_state.get("active_profile_id"))
         else:
             st.info("Log in to request a reference.")
         st.button("← Skip Back", on_click=prev_step)
@@ -322,7 +328,10 @@ def candidate_journey():
         user_email = st.session_state.supabase_user.email if st.session_state.get("supabase_user") else None
         if user_email:
             try:
-                summary_result = supabase.table("backchannel_references").select("*").eq("candidate_email", user_email).execute()
+                summary_query = supabase.table("backchannel_references").select("*").eq("candidate_email", user_email)
+                if st.session_state.get("active_profile_id"):
+                    summary_query = summary_query.eq("profile_id", st.session_state.active_profile_id)
+                summary_result = summary_query.execute()
                 summary_rows = summary_result.data or []
                 responded_count = sum(1 for r in summary_rows if r.get("responded"))
                 st.metric("Verified References", f"{responded_count} / {len(summary_rows)} requested")
@@ -426,7 +435,10 @@ def candidate_journey():
         reference_count = 0
         if qoh_user_email:
             try:
-                ref_result = supabase.table("backchannel_references").select("responded").eq("candidate_email", qoh_user_email).eq("responded", True).execute()
+                ref_query = supabase.table("backchannel_references").select("responded").eq("candidate_email", qoh_user_email).eq("responded", True)
+                if st.session_state.get("active_profile_id"):
+                    ref_query = ref_query.eq("profile_id", st.session_state.active_profile_id)
+                ref_result = ref_query.execute()
                 reference_count = len(ref_result.data or [])
             except Exception as e:
                 st.caption(f"Couldn't load verified reference count: {e}")
@@ -514,9 +526,12 @@ def candidate_journey():
                 # backchannel system instead of a self-reported form.
                 verified_references = []
                 try:
-                    ref_save_result = supabase.table("backchannel_references").select(
+                    ref_save_query = supabase.table("backchannel_references").select(
                         "reference_name, relationship, would_recommend, strengths, work_style_notes, fit_notes"
-                    ).eq("candidate_email", user_email).eq("responded", True).execute()
+                    ).eq("candidate_email", user_email).eq("responded", True)
+                    if st.session_state.get("active_profile_id"):
+                        ref_save_query = ref_save_query.eq("profile_id", st.session_state.active_profile_id)
+                    ref_save_result = ref_save_query.execute()
                     verified_references = ref_save_result.data or []
                 except Exception as e:
                     st.caption(f"⚠️ Couldn't load verified references for saving: {e}")

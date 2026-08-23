@@ -3,7 +3,7 @@ from datetime import datetime
 from db.client import get_fresh_anon_client
 
 
-def render_request_backchannel_ui(supabase, candidate_email):
+def render_request_backchannel_ui(supabase, candidate_email, profile_id=None):
     """
     Lets a candidate request a backchannel reference: a real person answers
     fit-focused questions about the candidate via a tokenized link, with no
@@ -29,23 +29,33 @@ def render_request_backchannel_ui(supabase, candidate_email):
             try:
                 result = supabase.table("backchannel_references").insert({
                     "candidate_email": candidate_email,
+                    "profile_id": profile_id,
                     "reference_name": ref_name,
                     "reference_email": ref_email,
                     "relationship": relationship,
                 }).execute()
                 token = result.data[0]["response_token"]
-                link = f"?ref={token}"
+                base_url = st.secrets.get("app", {}).get("base_url", "")
+                link = f"{base_url}/?ref={token}" if base_url else f"?ref={token}"
                 st.success(f"Link generated for {ref_name}. Copy and send it to them directly (email sending isn't wired up yet):")
                 st.code(link, language=None)
+                if base_url:
+                    st.markdown(f"[Open this link to test it]({link})")
             except Exception as e:
                 st.error(f"❌ Couldn't create the reference request: {e}")
 
-    _render_existing_requests(supabase, candidate_email)
+    _render_existing_requests(supabase, candidate_email, profile_id)
 
 
-def _render_existing_requests(supabase, candidate_email):
+def _render_existing_requests(supabase, candidate_email, profile_id=None):
     try:
-        result = supabase.table("backchannel_references").select("*").eq("candidate_email", candidate_email).execute()
+        query = supabase.table("backchannel_references").select("*").eq("candidate_email", candidate_email)
+        # Scope to this specific profile when we have an id -- otherwise
+        # (e.g. older references saved before this fix) fall back to
+        # showing all references under this login, rather than hiding them.
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+        result = query.execute()
     except Exception as e:
         st.caption(f"Couldn't load your reference requests: {e}")
         return
@@ -64,7 +74,9 @@ def _render_existing_requests(supabase, candidate_email):
                 st.write(f"**Work style notes:** {row.get('work_style_notes', '')}")
                 st.write(f"**Fit notes:** {row.get('fit_notes', '')}")
             else:
-                st.code(f"?ref={row.get('response_token')}", language=None)
+                base_url = st.secrets.get("app", {}).get("base_url", "")
+                pending_link = f"{base_url}/?ref={row.get('response_token')}" if base_url else f"?ref={row.get('response_token')}"
+                st.code(pending_link, language=None)
 
 
 def render_reference_response_page(token):
