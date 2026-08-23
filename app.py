@@ -816,15 +816,14 @@ if not st.session_state.supabase_user and not query_params:
     render_marketing_page("home")
     st.stop()
 
-# NOTE: manual portal switch for local testing. This bypasses the
-# server-side role check in auth/roles.py -- do not ship this to real
-# users without bringing back get_user_role() as the actual gate.
+# Real server-side role gate: role comes from Supabase auth user_metadata,
+# verified via get_user_role(), NOT a client-side toggle a visitor could
+# flip themselves. To grant recruiter access to an account, set
+# user_metadata.role = "recruiter" for that user in Supabase.
 if st.session_state.supabase_user:
-    with st.sidebar:
-        st.markdown("---")
-        portal = st.radio("View As (testing only)", ["Candidate", "Recruiter"], key="portal_choice")
+    user_role = get_user_role(st.session_state.supabase_user)
 
-    if portal == "Recruiter":
+    if user_role == "recruiter":
         recruiter_dashboard()
     else:
         if not st.session_state.get("profile_selected"):
