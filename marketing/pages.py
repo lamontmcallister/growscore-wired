@@ -50,6 +50,25 @@ def _inject_marketing_css():
                 border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4rem;
                 padding-top: 2rem; color: rgba(255,255,255,0.45); font-size: 0.9rem;
             }
+            /* Auto-scrolling pill strip, pauses on hover -- same technique
+            as a logo conveyor belt, built from real Skippr feature pills
+            rather than customer logos we don't have yet. */
+            .mkt-marquee-outer { overflow: hidden; width: 100%; }
+            .mkt-marquee-track {
+                display: flex; gap: 1rem; width: max-content;
+                animation: mkt-scroll 22s linear infinite;
+            }
+            .mkt-marquee-outer:hover .mkt-marquee-track { animation-play-state: paused; }
+            @keyframes mkt-scroll {
+                from { transform: translateX(0); }
+                to { transform: translateX(-50%); }
+            }
+            .mkt-pill {
+                flex-shrink: 0; background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.12); border-radius: 999px;
+                padding: 0.6rem 1.4rem; color: rgba(255,255,255,0.85);
+                font-size: 0.9rem; font-weight: 600; white-space: nowrap;
+            }
             /* Override the main app's light-theme card styling (white
             backgrounds, borders) that otherwise leaks into st.columns()
             containers on these dark marketing pages, causing white text
@@ -94,9 +113,18 @@ def _render_nav(active: str):
 
 def _render_footer():
     st.markdown("""
-        <div class="mkt-footer">
-            <strong style="color:#FFFFFF;">Skippr</strong><br>
-            From Rejection to Revolution. Built to humanize hiring.
+        <div class="mkt-footer" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:2rem;">
+            <div>
+                <strong style="color:#FFFFFF;font-size:1.1rem;">Skippr</strong><br>
+                <span style="color:rgba(255,255,255,0.45);">From Rejection to Revolution.<br>Built to humanize hiring.</span>
+            </div>
+            <div>
+                <div style="color:#FFFFFF;font-weight:700;margin-bottom:0.6rem;">Navigation</div>
+                <a href="?mkt=home" target="_self" style="display:block;color:rgba(255,255,255,0.6);text-decoration:none;margin-bottom:0.4rem;">Skippr Home</a>
+                <a href="?mkt=candidates" target="_self" style="display:block;color:rgba(255,255,255,0.6);text-decoration:none;margin-bottom:0.4rem;">Candidate Page</a>
+                <a href="?mkt=recruiters" target="_self" style="display:block;color:rgba(255,255,255,0.6);text-decoration:none;margin-bottom:0.4rem;">Recruiter Page</a>
+                <a href="?mkt=about" target="_self" style="display:block;color:rgba(255,255,255,0.6);text-decoration:none;">About</a>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -120,6 +148,46 @@ def render_home():
         st.markdown(f"""
             <img src="{HERO_IMAGE}" style="width:100%;border-radius:16px;margin-top:1rem;">
         """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    pills = [
+        "Verified References", "Evidence-Based Matching", "Real Growth Roadmaps",
+        "No Self-Reported Claims", "Backchannel Fit Checks", "Transparent Scoring",
+    ]
+    pills_html = "".join(f'<div class="mkt-pill">{p}</div>' for p in pills)
+    st.markdown(f"""
+        <div class="mkt-marquee-outer">
+            <div class="mkt-marquee-track">
+                {pills_html}{pills_html}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown('<div class="mkt-section-title">Hiring Is Broken. The Numbers Prove It.</div>', unsafe_allow_html=True)
+
+    stats = [
+        ("~6 months", "is the average job search length today, according to U.S. Bureau of Labor Statistics data."),
+        ("250 : 1", "is the average ratio of applications to interview invites for a single corporate job posting."),
+        ("75%+", "of resumes are rejected by ATS filters before a human recruiter ever sees them."),
+        ("41%", "of security and fraud leaders say their company has unknowingly hired a fraudulent candidate."),
+    ]
+    st1, st2, st3, st4 = st.columns(4)
+    for col, (number, desc) in zip([st1, st2, st3, st4], stats):
+        with col:
+            st.markdown(f"""
+                <div style="font-size:2.2rem;font-weight:800;
+                            background:linear-gradient(135deg,#2D5BFF,#00C2A8);
+                            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                            background-clip:text;margin-bottom:0.4rem;">{number}</div>
+                <p class="mkt-body" style="font-size:0.88rem;">{desc}</p>
+            """, unsafe_allow_html=True)
+    st.markdown("""
+        <p style="color:rgba(255,255,255,0.35);font-size:0.75rem;margin-top:1rem;">
+            Sources: U.S. Bureau of Labor Statistics, Gartner, and industry hiring research (2025-2026).
+        </p>
+    """, unsafe_allow_html=True)
 
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown('<div class="mkt-section-title">Why Choose Skippr?</div>', unsafe_allow_html=True)
@@ -146,6 +214,49 @@ def render_home():
             candidates with verified inputs -- reducing time to hire and improving decision
             quality.</p>
         """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown('<div class="mkt-section-title">How Skippr Works</div>', unsafe_allow_html=True)
+
+    steps = [
+        ("01", "Build Your Profile", "Upload your resume once. Skippr extracts your real skills and experience -- no manual re-entry per application."),
+        ("02", "Get an Honest Match Score", "Paste a job description and get a score built from a transparent rubric, with real evidence quoted from your own resume."),
+        ("03", "Add a Verified Reference", "Request a backchannel reference -- a real person answers honest fit questions, no self-reported claims a recruiter has to just trust."),
+        ("04", "Follow a Real Roadmap", "Get a growth plan targeted at your specific gaps, with real course links -- not generic 30/60/90-day filler."),
+    ]
+    s1, s2, s3, s4 = st.columns(4)
+    for col, (num, title, body) in zip([s1, s2, s3, s4], steps):
+        with col:
+            st.markdown(f"""
+                <div style="color:#2D5BFF;font-weight:800;font-size:1.6rem;margin-bottom:0.5rem;">{num}</div>
+                <div class="mkt-card-title">{title}</div>
+                <p class="mkt-body" style="font-size:0.92rem;">{body}</p>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("""
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+                    border-radius:16px;padding:2.5rem;">
+            <div class="mkt-card-title" style="font-size:1.3rem;">Why I Built Skippr</div>
+            <p class="mkt-body" style="font-size:1.05rem;font-style:italic;">
+                "I didn't get the job. I built the platform that fixes the problem. AI made it
+                easy to fake a great resume -- Skippr is the verification layer hiring was
+                missing: real references, real evidence, real people, on both sides of the hire."
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("""
+        <div style="text-align:center;background:linear-gradient(135deg, rgba(45,91,255,0.12), rgba(0,194,168,0.08));
+                    border-radius:20px;padding:3rem 2rem;">
+            <div class="mkt-section-title" style="margin-bottom:1rem;">Your Career, Finally Verified.</div>
+            <p class="mkt-body" style="max-width:500px;margin:0 auto 1.5rem auto;">
+                Build a profile that proves what your resume can't. Free to start.
+            </p>
+            <a class="mkt-cta" href="?mkt=login" target="_self">Get Started</a>
+        </div>
+    """, unsafe_allow_html=True)
 
     _render_footer()
 
