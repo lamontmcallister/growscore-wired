@@ -1,7 +1,8 @@
 import streamlit as st
+from ai.roadmap import generate_roadmap, render_roadmap
 
 
-def render_match_analytics(supabase, profile_id):
+def render_match_analytics(supabase, profile_id, resume_text=""):
     """
     Shows every job description this profile has been analyzed against,
     sorted by score, with the strongest match highlighted. All data comes
@@ -40,16 +41,16 @@ def render_match_analytics(supabase, profile_id):
 
     st.markdown("---")
     st.markdown("#### 🔥 Your Hottest Prospect")
-    _render_match_card(best_match, highlight=True)
+    _render_match_card(supabase, best_match, resume_text, highlight=True)
 
     if len(matches) > 1:
         st.markdown("---")
         st.markdown("#### All Matches")
         for match in matches[1:]:
-            _render_match_card(match, highlight=False)
+            _render_match_card(supabase, match, resume_text, highlight=False)
 
 
-def _render_match_card(match, highlight: bool):
+def _render_match_card(supabase, match, resume_text, highlight: bool):
     score = match.get("score", 0)
     job_title = match.get("job_title") or ""
     company_name = match.get("company_name") or ""
@@ -96,3 +97,21 @@ def _render_match_card(match, highlight: bool):
                     for item in missing:
                         skill = item.get("skill", "") if isinstance(item, dict) else item
                         st.markdown(f"- {skill}")
+
+                st.markdown("---")
+                st.markdown("**🚀 Growth Roadmap for this role**")
+                saved_roadmap = match.get("roadmap")
+                if saved_roadmap:
+                    render_roadmap(saved_roadmap, missing)
+                else:
+                    if st.button("Generate Roadmap", key=f"gen_roadmap_{match.get('id')}"):
+                        with st.spinner("Building a roadmap for this specific role..."):
+                            new_roadmap, roadmap_error = generate_roadmap(resume_text, missing)
+                        if roadmap_error:
+                            st.error(f"⚠️ Couldn't generate a roadmap: {roadmap_error}")
+                        else:
+                            try:
+                                supabase.table("job_matches").update({"roadmap": new_roadmap}).eq("id", match.get("id")).execute()
+                            except Exception as e:
+                                st.caption(f"Roadmap generated, but couldn't save it: {e}")
+                            st.rerun()

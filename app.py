@@ -13,6 +13,7 @@ from auth.roles import get_user_role
 from candidates.backchannel import render_request_backchannel_ui, render_reference_response_page
 from candidates.match_analytics import render_match_analytics
 from ai.job_url_parser import fetch_job_posting
+from ai.roadmap import generate_roadmap, render_roadmap
 from marketing.pages import render_marketing_page
 
 # --- CONFIG ---
@@ -551,7 +552,7 @@ def candidate_journey():
                 st.write(f"**{k}**: {v}/100")
 
         st.markdown("---")
-        render_match_analytics(supabase, st.session_state.get("active_profile_id"))
+        render_match_analytics(supabase, st.session_state.get("active_profile_id"), st.session_state.get("resume_text", ""))
 
         st.button("← Skip Back", on_click=prev_step)
         st.button("Skip →", on_click=next_step)
@@ -564,36 +565,16 @@ def candidate_journey():
 
         if missing_skills:
             st.markdown("""_This roadmap is built around the specific gaps identified in Step 8 -- not generic advice._""")
-            gap_lines = "\n".join(
-                f"- {item.get('skill', '')}: {item.get('why_it_matters', '')}"
-                for item in missing_skills if isinstance(item, dict)
-            )
-            prompt = (
-                f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\n"
-                f"This candidate is targeting a specific role and has these skill gaps:\n{gap_lines}\n\n"
-                "Create a career roadmap specifically focused on closing THESE gaps, in priority order. "
-                "Each phase should reference which specific gap(s) it addresses.\n\n"
-                'Respond as JSON: {"30_day": "...", "60_day": "...", "90_day": "...", "6_month": "...", "1_year": "..."}'
-            )
         else:
             st.markdown("""_This roadmap gives general 30/60/90-day growth ideas. For a roadmap targeted at a specific role, go back to Step 8 and analyze a job description first._""")
-            prompt = (
-                f"Given this resume:\n{st.session_state.get('resume_text', '')}\n\n"
-                'Create a career roadmap. Respond as JSON: '
-                '{"30_day": "...", "60_day": "...", "90_day": "...", "6_month": "...", "1_year": "..."}'
-            )
 
-        roadmap_data, roadmap_error = call_openai_json(prompt, temperature=0.7)
+        roadmap_data, roadmap_error = generate_roadmap(st.session_state.get("resume_text", ""), missing_skills)
         if roadmap_error:
             st.error(f"⚠️ Couldn't generate a roadmap right now ({roadmap_error}). You can still save your profile below.")
             roadmap = None
         else:
             roadmap = roadmap_data
-            st.markdown(f"**30-Day:** {roadmap.get('30_day', '')}")
-            st.markdown(f"**60-Day:** {roadmap.get('60_day', '')}")
-            st.markdown(f"**90-Day:** {roadmap.get('90_day', '')}")
-            st.markdown(f"**6-Month:** {roadmap.get('6_month', '')}")
-            st.markdown(f"**1-Year:** {roadmap.get('1_year', '')}")
+            render_roadmap(roadmap, missing_skills)
             st.success("🎉 Complete!")
 
         if missing_skills:
