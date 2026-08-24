@@ -402,6 +402,24 @@ def candidate_journey():
         st.markdown("### 📄 Step 8: Job Matching")
         st.markdown("""_Paste the job description you're targeting, or try a job posting link. We'll show exactly what matches and what's missing -- not just a score._""")
 
+        # IMPORTANT: st.text_area's value= only sets the INITIAL content
+        # the first time this widget is ever rendered. On every rerun after
+        # that, Streamlit ignores value= and uses its own internal widget
+        # state instead -- so trying to "auto-fill" a new JD by changing
+        # value= silently does nothing once the widget has been touched
+        # once. The fix: give it a real key, and write into
+        # st.session_state[key] directly to change its content
+        # programmatically (the documented-correct way to do this).
+        #
+        # Also re-sync when the ACTIVE PROFILE changes -- otherwise
+        # switching profiles would leave a previous profile's JD text
+        # sitting in the box indefinitely, since "jd_text_area" would
+        # already be considered initialized from before.
+        current_profile_id = st.session_state.get("active_profile_id")
+        if st.session_state.get("_jd_text_area_loaded_for_profile") != current_profile_id:
+            st.session_state.jd_text_area = st.session_state.get("_loaded_active_jd_text", "")
+            st.session_state._jd_text_area_loaded_for_profile = current_profile_id
+
         with st.expander("🔗 Or paste a job posting link"):
             job_url_input = st.text_input("Job posting URL")
             if st.button("Fetch Job Details") and job_url_input:
@@ -413,22 +431,27 @@ def candidate_journey():
                     st.session_state.job_url_title = job_data.get("title", "")
                     st.session_state.job_url_company = job_data.get("company", "")
                     st.session_state.job_url_url = job_data.get("url", "")
+                    # Always populate the box with whatever we actually
+                    # fetched -- the candidate decides if it's good enough,
+                    # we don't silently withhold it. We DO still label
+                    # quality clearly, since a short teaser snippet scored
+                    # as if it were a full JD would give a misleading match.
+                    st.session_state.jd_text_area = job_data.get("description", "")
                     if job_data.get("extraction_level") == "structured":
-                        # Full, real job description found -- safe to
-                        # auto-fill the actual scoring field.
-                        st.session_state.jd_target_text = job_data.get("description", "")
-                        st.success(f"✅ Found: {job_data.get('title', '')} at {job_data.get('company', '') or 'this company'}. Description filled in below.")
-                    else:
-                        # Only a title/teaser snippet found -- NOT reliable
-                        # enough to score against. Save title/company for
-                        # record-keeping, but require the candidate to
-                        # paste the real JD text themselves.
-                        st.info(f"Found the posting for **{job_data.get('title', '')}**"
+                        st.success(f"✅ Found the full posting: {job_data.get('title', '')} at {job_data.get('company', '') or 'this company'}. Description filled in below.")
+                    elif "linkedin.com" in job_url_input.lower():
+                        st.warning(f"⚠️ Found **{job_data.get('title', '')}**"
                                 + (f" at **{job_data.get('company', '')}**" if job_data.get('company') else "")
-                                + ", but couldn't pull the full description automatically. Paste it below.")
+                                + " -- LinkedIn only shares the job title publicly, not the full description. "
+                                + "Please copy the actual job description from the LinkedIn page and paste it below for an accurate score.")
+                    else:
+                        st.warning(f"⚠️ Found **{job_data.get('title', '')}**"
+                                + (f" at **{job_data.get('company', '')}**" if job_data.get('company') else "")
+                                + ", but this site only gave us a short preview, not the full description -- "
+                                + "it's filled in below, but review it and paste the full JD manually for an accurate score.")
+                    st.rerun()
 
-        default_jd = st.session_state.get("jd_target_text") or st.session_state.get("_loaded_active_jd_text", "")
-        jd_target = st.text_area("Paste the job description you're targeting", value=default_jd, height=200)
+        jd_target = st.text_area("Paste the job description you're targeting", key="jd_text_area", height=200)
         if st.button("Analyze Match") and jd_target and "resume_text" in st.session_state:
             with st.spinner("Analyzing your fit against this role..."):
                 match_data, match_error = match_resume_to_jd(st.session_state.resume_text, jd_target)
