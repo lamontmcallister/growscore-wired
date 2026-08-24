@@ -11,6 +11,8 @@ from ai.resume import call_openai_json, extract_skills_from_resume, extract_cont
 from ai.learning_resources import coursera_search_link
 from auth.roles import get_user_role
 from candidates.backchannel import render_request_backchannel_ui, render_reference_response_page
+from candidates.match_analytics import render_match_analytics
+from ai.job_url_parser import fetch_job_posting
 from marketing.pages import render_marketing_page
 
 # --- CONFIG ---
@@ -398,7 +400,33 @@ def candidate_journey():
 
     elif step == 7:
         st.markdown("### 📄 Step 8: Job Matching")
-        st.markdown("""_Paste the job description you're targeting. We'll show exactly what matches and what's missing -- not just a score._""")
+        st.markdown("""_Paste the job description you're targeting, or try a job posting link. We'll show exactly what matches and what's missing -- not just a score._""")
+
+        with st.expander("🔗 Or paste a job posting link"):
+            job_url_input = st.text_input("Job posting URL")
+            if st.button("Fetch Job Details") and job_url_input:
+                with st.spinner("Reading the job posting..."):
+                    job_data, job_error = fetch_job_posting(job_url_input)
+                if job_error:
+                    st.warning(f"⚠️ {job_error}")
+                else:
+                    st.session_state.job_url_title = job_data.get("title", "")
+                    st.session_state.job_url_company = job_data.get("company", "")
+                    st.session_state.job_url_url = job_data.get("url", "")
+                    if job_data.get("extraction_level") == "structured":
+                        # Full, real job description found -- safe to
+                        # auto-fill the actual scoring field.
+                        st.session_state.jd_target_text = job_data.get("description", "")
+                        st.success(f"✅ Found: {job_data.get('title', '')} at {job_data.get('company', '') or 'this company'}. Description filled in below.")
+                    else:
+                        # Only a title/teaser snippet found -- NOT reliable
+                        # enough to score against. Save title/company for
+                        # record-keeping, but require the candidate to
+                        # paste the real JD text themselves.
+                        st.info(f"Found the posting for **{job_data.get('title', '')}**"
+                                + (f" at **{job_data.get('company', '')}**" if job_data.get('company') else "")
+                                + ", but couldn't pull the full description automatically. Paste it below.")
+
         default_jd = st.session_state.get("jd_target_text") or st.session_state.get("_loaded_active_jd_text", "")
         jd_target = st.text_area("Paste the job description you're targeting", value=default_jd, height=200)
         if st.button("Analyze Match") and jd_target and "resume_text" in st.session_state:
@@ -418,10 +446,14 @@ def candidate_journey():
                     try:
                         supabase.table("job_matches").insert({
                             "user_email": user_email,
+                            "profile_id": st.session_state.get("active_profile_id"),
                             "jd_text": jd_target,
                             "score": match_data.get("score", 0),
                             "matched_skills": match_data.get("matched_skills", []),
                             "missing_skills": match_data.get("missing_skills", []),
+                            "job_title": st.session_state.get("job_url_title", ""),
+                            "company_name": st.session_state.get("job_url_company", ""),
+                            "job_url": st.session_state.get("job_url_url", ""),
                         }).execute()
                     except Exception as e:
                         st.caption(f"⚠️ Match shown above, but couldn't save to your history: {e}")
@@ -494,6 +526,10 @@ def candidate_journey():
             st.session_state.profiles[st.session_state.active_profile]["progress"]["Quality of Hire"] = True
             for k, v in breakdown.items():
                 st.write(f"**{k}**: {v}/100")
+
+        st.markdown("---")
+        render_match_analytics(supabase, st.session_state.get("active_profile_id"))
+
         st.button("← Skip Back", on_click=prev_step)
         st.button("Skip →", on_click=next_step)
 
